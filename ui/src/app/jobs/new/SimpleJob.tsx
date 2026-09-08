@@ -32,6 +32,7 @@ import { FlipHorizontal2, FlipVertical2 } from 'lucide-react';
 import { handleModelArchChange } from './utils';
 import { IoFlaskSharp } from 'react-icons/io5';
 import { isMac } from '@/helpers/basic';
+import { useLanguage } from '@/components/LanguageProvider';
 
 type Props = {
   jobConfig: JobConfig;
@@ -60,6 +61,7 @@ export default function SimpleJob({
   datasetOptions,
   isLoading,
 }: Props) {
+  const { translate } = useLanguage();
   const modelArch = useMemo(() => {
     return modelArchs.find(a => a.name === jobConfig.config.process[0].model.arch) as ModelArch;
   }, [jobConfig.config.process[0].model.arch]);
@@ -229,7 +231,7 @@ export default function SimpleJob({
           <div className="absolute inset-0 z-50 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-400 border-t-blue-500" />
-              <span className="text-sm text-gray-400">Loading...</span>
+              <span className="text-sm text-gray-400">{translate('Loading...')}</span>
             </div>
           </div>
         )}
@@ -343,7 +345,8 @@ export default function SimpleJob({
                 <Checkbox
                   label={
                     <>
-                      Layer Offloading <IoFlaskSharp className="inline text-yellow-500" name="Experimental" />{' '}
+                      {translate('Layer Offloading')}{' '}
+                      <IoFlaskSharp className="inline text-yellow-500" name="Experimental" />{' '}
                     </>
                   }
                   checked={jobConfig.config.process[0].model.layer_offloading || false}
@@ -879,7 +882,7 @@ export default function SimpleJob({
                         setJobConfig(datasets, 'config.process[0].datasets');
                       }}
                       className="bg-gray-700 hover:bg-gray-600 rounded-full p-2 text-sm transition-colors"
-                      title="Duplicate Dataset"
+                      title={translate('Duplicate Dataset')}
                     >
                       <Copy className="w-4 h-4" />
                     </button>
@@ -892,12 +895,14 @@ export default function SimpleJob({
                         )
                       }
                       className="bg-red-600 hover:bg-red-700 text-white rounded-full p-2 text-sm transition-colors"
-                      title="Remove Dataset"
+                      title={translate('Remove Dataset')}
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <h2 className="text-lg font-bold mb-4">Dataset {i + 1}</h2>
+                  <h2 className="text-lg font-bold mb-4">
+                    {translate('Dataset')} {i + 1}
+                  </h2>
                   <div className={datasetStyleClass}>
                     <div>
                       <SelectInput
@@ -1096,7 +1101,7 @@ export default function SimpleJob({
                           <Checkbox
                             label={
                               <>
-                                Flip X <FlipHorizontal2 className="inline-block w-4 h-4 ml-1" />
+                                {translate('Flip X')} <FlipHorizontal2 className="inline-block w-4 h-4 ml-1" />
                               </>
                             }
                             checked={dataset.flip_x || false}
@@ -1105,7 +1110,7 @@ export default function SimpleJob({
                           <Checkbox
                             label={
                               <>
-                                Flip Y <FlipVertical2 className="inline-block w-4 h-4 ml-1" />
+                                {translate('Flip Y')} <FlipVertical2 className="inline-block w-4 h-4 ml-1" />
                               </>
                             }
                             checked={dataset.flip_y || false}
@@ -1156,7 +1161,7 @@ export default function SimpleJob({
                 }}
                 className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
               >
-                Add Dataset
+                {translate('Add Dataset')}
               </button>
             </>
           </Card>
@@ -1336,7 +1341,7 @@ export default function SimpleJob({
                   className="px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-md inline-flex items-center gap-2"
                 >
                   <Wand2 className="w-4 h-4" />
-                  Upsample Prompts
+                  {translate('Upsample Prompts')}
                 </button>
               )}
             </div>
@@ -1444,7 +1449,7 @@ export default function SimpleJob({
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-gray-600 text-gray-300 hover:bg-gray-800 transition-colors"
                             >
                               <SquareDashed className="w-3.5 h-3.5" />
-                              Edit caption &amp; boxes
+                              {translate('Edit caption & boxes')}
                             </button>
                           </div>
                         )}
@@ -1629,13 +1634,17 @@ export default function SimpleJob({
               }
               className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
             >
-              Add Prompt
+              {translate('Add Prompt')}
             </button>
           </Card>
         </div>
 
-        {status === 'success' && <p className="text-green-500 text-center">Training saved successfully!</p>}
-        {status === 'error' && <p className="text-red-500 text-center">Error saving training. Please try again.</p>}
+        {status === 'success' && (
+          <p className="text-green-500 text-center">{translate('Training saved successfully!')}</p>
+        )}
+        {status === 'error' && (
+          <p className="text-red-500 text-center">{translate('Error saving training. Please try again.')}</p>
+        )}
       </form>
       <AddSingleImageModal />
     </>

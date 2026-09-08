@@ -3,6 +3,7 @@ import { createGlobalState } from 'react-global-hooks';
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react';
 import React from 'react';
 import { ConfigDoc } from '@/types';
+import { useLanguage } from './LanguageProvider';
 
 export const docState = createGlobalState<ConfigDoc | null>(null);
 
@@ -11,6 +12,7 @@ export const openDoc = (doc: ConfigDoc) => {
 };
 
 export default function DocModal() {
+  const { translate } = useLanguage();
   const [doc, setDoc] = docState.use();
   const isOpen = !!doc;
 
@@ -35,7 +37,7 @@ export default function DocModal() {
               <div className="sm:flex sm:items-start">
                 <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
                   <DialogTitle as="h3" className={`text-base font-semibold `}>
-                    {doc?.title || 'Confirm Action'}
+                    {doc?.title || translate('Confirm Action')}
                   </DialogTitle>
                   <div className="mt-2 text-sm text-gray-200">{doc?.description}</div>
                 </div>
@@ -48,7 +50,7 @@ export default function DocModal() {
                 onClick={onClose}
                 className="mt-3 inline-flex w-full justify-center rounded-md bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800 sm:mt-0 sm:w-auto ring-0"
               >
-                Close
+                {translate('Close')}
               </button>
             </div>
           </DialogPanel>

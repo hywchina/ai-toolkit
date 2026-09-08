@@ -1,6 +1,7 @@
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { FaChevronDown } from 'react-icons/fa';
 import classNames from 'classnames';
+import { useLanguage } from './LanguageProvider';
 
 interface CardProps {
   title?: string;
@@ -10,6 +11,7 @@ interface CardProps {
 }
 
 const Card: React.FC<CardProps> = ({ title, children, collapsible, defaultOpen }) => {
+  const { translate } = useLanguage();
   if (collapsible) {
     return (
       <Disclosure as="section" className="space-y-2 px-4 pb-2 pt-2 bg-gray-900 rounded-lg" defaultOpen={defaultOpen}>
@@ -19,7 +21,7 @@ const Card: React.FC<CardProps> = ({ title, children, collapsible, defaultOpen }
               <div className="flex-1">
                 {title && (
                   <h2 className={classNames('text-lg mb-2 font-semibold uppercase text-gray-500', { 'mb-0': !open })}>
-                    {title}
+                    {translate(title)}
                   </h2>
                 )}
               </div>
@@ -34,7 +36,7 @@ const Card: React.FC<CardProps> = ({ title, children, collapsible, defaultOpen }
   }
   return (
     <section className="space-y-2 px-4 pb-4 pt-2 bg-gray-900 rounded-lg">
-      {title && <h2 className="text-lg mb-2 font-semibold uppercase text-gray-500">{title}</h2>}
+      {title && <h2 className="text-lg mb-2 font-semibold uppercase text-gray-500">{translate(title)}</h2>}
       {children ?? null}
     </section>
   );

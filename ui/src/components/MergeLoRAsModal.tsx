@@ -7,6 +7,7 @@ import { TextInput, SelectInput } from '@/components/formInputs';
 import { getFilename } from '@/utils/basic';
 import { callScriptStream } from '@/utils/callScript';
 import { SelectOption } from '@/types';
+import { useLanguage } from './LanguageProvider';
 
 export interface MergeLoRAFile {
   path: string;
@@ -47,6 +48,7 @@ const joinPath = (folder: string, name: string) => {
 };
 
 const MergeLoRAsModal: React.FC = () => {
+  const { translate } = useLanguage();
   const [modalInfo, setModalInfo] = mergeLoRAsModalState.use();
   const isOpen = modalInfo !== null;
   const [selectedLoRAs, setSelectedLoRAs] = useState<SelectedLoRA[]>([]);
@@ -107,14 +109,14 @@ const MergeLoRAsModal: React.FC = () => {
         if (finalEvent?.type === 'error' && finalEvent.message) {
           append(`\n${finalEvent.message}\n`);
         } else if (finalEvent?.type === 'exit' && finalEvent.timedOut) {
-          append('\nScript timed out.\n');
+          append(`\n${translate('Script timed out.')}\n`);
         } else if (finalEvent?.type === 'exit') {
-          append(`\nScript exited with code ${finalEvent.exitCode}.\n`);
+          append(`\n${translate('Script exited with code')} ${finalEvent.exitCode}.\n`);
         }
       }
     } catch (err: any) {
       setHasError(true);
-      append(`\n${err?.message || 'Unknown error'}\n`);
+      append(`\n${err?.message || translate('Unknown error')}\n`);
     } finally {
       setIsRunning(false);
       setIsDone(true);
@@ -155,7 +157,7 @@ const MergeLoRAsModal: React.FC = () => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Merge LoRAs"
+      title={translate('Merge LoRAs')}
       size="lg"
       showCloseButton={!isRunning}
       closeOnOverlayClick={!isRunning}
@@ -163,15 +165,17 @@ const MergeLoRAsModal: React.FC = () => {
       {showLog ? (
         <div>
           <div className="mb-2 text-sm">
-            {isRunning && <span className="text-amber-400">Merging LoRAs... please do not close this window.</span>}
-            {isDone && hasError && <span className="text-rose-400">Merge failed. See log below.</span>}
-            {isDone && !hasError && <span className="text-emerald-400">Merge complete.</span>}
+            {isRunning && (
+              <span className="text-amber-400">{translate('Merging LoRAs... please do not close this window.')}</span>
+            )}
+            {isDone && hasError && <span className="text-rose-400">{translate('Merge failed. See log below.')}</span>}
+            {isDone && !hasError && <span className="text-emerald-400">{translate('Merge complete.')}</span>}
           </div>
           <div
             ref={logRef}
             className="font-mono text-xs whitespace-pre-wrap break-all overflow-y-auto rounded-md p-3 min-h-[400px] max-h-[60vh] bg-white text-gray-900 dark:bg-black dark:text-gray-100"
           >
-            {logOutput || (isRunning ? 'Starting...\n' : '')}
+            {logOutput || (isRunning ? `${translate('Starting...')}\n` : '')}
           </div>
           <div className="mt-4 flex justify-end gap-2">
             <button
@@ -180,7 +184,7 @@ const MergeLoRAsModal: React.FC = () => {
               disabled={isRunning}
               className="px-4 py-2 text-sm bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed text-gray-100 rounded-md"
             >
-              Close
+              {translate('Close')}
             </button>
           </div>
         </div>
@@ -216,7 +220,7 @@ const MergeLoRAsModal: React.FC = () => {
 
           {selectedLoRAs.length > 0 && (
             <div className="mt-4">
-              <label className="block text-xs mb-1 text-gray-300">Selected LoRAs</label>
+              <label className="block text-xs mb-1 text-gray-300">{translate('Selected LoRAs')}</label>
               <div className="bg-purple-500/10 rounded-xl p-2 max-h-48 overflow-y-auto space-y-1">
                 {selectedLoRAs.map(s => (
                   <div key={s.path} className="flex items-center gap-2 px-2 py-0.5">
@@ -242,7 +246,7 @@ const MergeLoRAsModal: React.FC = () => {
                       type="button"
                       onClick={() => removeLoRA(s.path)}
                       className="flex-shrink-0 text-gray-400 hover:text-rose-400 p-0.5"
-                      aria-label="Remove"
+                      aria-label={translate('Remove')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -258,14 +262,14 @@ const MergeLoRAsModal: React.FC = () => {
               onClick={onClose}
               className="px-4 py-2 text-sm text-gray-300 hover:text-gray-100 rounded-md"
             >
-              Cancel
+              {translate('Cancel')}
             </button>
             <button
               type="submit"
               disabled={selectedLoRAs.length === 0 || !modalInfo?.outputName}
               className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-md"
             >
-              Merge
+              {translate('Merge')}
             </button>
           </div>
         </form>

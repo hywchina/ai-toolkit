@@ -13,6 +13,7 @@ import useGPUInfo from '@/hooks/useGPUInfo';
 import { openConfirm } from '@/components/ConfirmModal';
 import { deleteJob, getTotalSteps, stopJob } from '@/utils/jobs';
 import { Trash2 } from 'lucide-react';
+import { TranslationKey, useLanguage } from './LanguageProvider';
 
 interface JobsTableProps {
   autoStartQueue?: boolean;
@@ -26,6 +27,7 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
   const { gpuList, isGPUInfoLoaded } = useGPUInfo();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteProgress, setDeleteProgress] = useState<{ done: number; total: number } | null>(null);
+  const { t } = useLanguage();
 
   const refresh = () => {
     refreshJobs();
@@ -55,19 +57,17 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
     const jobsToDelete = jobs.filter(job => selectedIds.has(job.id));
     if (jobsToDelete.length === 0) return;
     const runningCount = jobsToDelete.filter(job => job.status === 'running').length;
-    let message = `Are you sure you want to delete ${jobsToDelete.length} job${
-      jobsToDelete.length === 1 ? '' : 's'
-    }? This will also permanently remove them from your disk.`;
+    let message = t('jobs.deleteMessage', { count: jobsToDelete.length });
     if (runningCount > 0) {
       message += ` WARNING: ${runningCount} of them ${
         runningCount === 1 ? 'is' : 'are'
       } currently running and will be stopped first.`;
     }
     openConfirm({
-      title: 'Delete Jobs',
+      title: t('jobs.deleteTitle'),
       message: message,
       type: 'warning',
-      confirmText: 'Delete',
+      confirmText: t('common.delete'),
       onConfirm: async () => {
         setDeleteProgress({ done: 0, total: jobsToDelete.length });
         for (let i = 0; i < jobsToDelete.length; i++) {
@@ -122,7 +122,7 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
       ),
     },
     {
-      title: 'Name',
+      title: t('jobs.name'),
       key: 'name',
       render: row => {
         let title = row.name;
@@ -149,7 +149,7 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
       },
     },
     {
-      title: 'Steps',
+      title: t('jobs.steps'),
       key: 'steps',
       render: row => {
         const totalSteps = getTotalSteps(row);
@@ -177,7 +177,7 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
       key: 'gpu_ids',
     },
     {
-      title: 'Status',
+      title: t('jobs.status'),
       key: 'status',
       render: row => {
         let statusClass = 'text-gray-400';
@@ -185,16 +185,21 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
         if (row.status === 'failed') statusClass = 'text-red-400';
         if (row.status === 'running') statusClass = 'text-blue-400';
 
-        return <span className={statusClass}>{row.status}</span>;
+        const statusKey = `jobs.status.${row.status}` as TranslationKey;
+        return (
+          <span className={statusClass}>
+            {['queued', 'running', 'stopping', 'completed', 'failed'].includes(row.status) ? t(statusKey) : row.status}
+          </span>
+        );
       },
     },
     {
-      title: 'Info',
+      title: t('jobs.info'),
       key: 'info',
       className: 'truncate max-w-xs',
     },
     {
-      title: 'Actions',
+      title: t('common.actions'),
       key: 'actions',
       className: 'text-right',
       render: row => {
@@ -236,7 +241,7 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
       }
     });
     return jd;
-  }, [jobs, queues, isGPUInfoLoaded]);
+  }, [jobs, queues, isGPUInfoLoaded, gpuList]);
 
   let isLoading = status === 'loading' || queueStatus === 'loading' || !isGPUInfoLoaded;
 
@@ -251,26 +256,24 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
             <>
               <CgSpinner className="inline animate-spin text-red-400" />
               <span className="text-sm text-gray-300">
-                Deleting {deleteProgress.done} / {deleteProgress.total}...
+                {t('jobs.deleting', { done: deleteProgress.done, total: deleteProgress.total })}
               </span>
             </>
           ) : (
             <>
-              <span className="text-sm text-gray-300 flex-1">
-                {selectedIds.size} job{selectedIds.size === 1 ? '' : 's'} selected
-              </span>
+              <span className="text-sm text-gray-300 flex-1">{t('jobs.selected', { count: selectedIds.size })}</span>
               <button
                 onClick={() => setSelectedIds(new Set())}
                 className="text-xs text-gray-300 bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded"
               >
-                Clear
+                {t('jobs.clear')}
               </button>
               <button
                 onClick={onMassDelete}
                 className="text-xs text-white bg-red-600 hover:bg-red-700 px-2 py-1 rounded flex items-center gap-1"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Delete Selected
+                {t('jobs.deleteSelected')}
               </button>
             </>
           )}
@@ -299,7 +302,7 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
                 <div className="text-sm text-gray-300 italic flex items-center flex-shrink-0">
                   {queue?.is_running ? (
                     <>
-                      <span className="text-green-100 dark:text-green-400 mr-2">Queue Running</span>
+                      <span className="text-green-100 dark:text-green-400 mr-2">{t('jobs.running')}</span>
                       <button
                         onClick={async () => {
                           await stopQueue(queue.gpu_ids as string);
@@ -307,12 +310,12 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
                         }}
                         className="ml-2 sm:ml-4 text-xs text-white bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
                       >
-                        STOP
+                        {t('jobs.stop')}
                       </button>
                     </>
                   ) : (
                     <>
-                      <span className="text-red-100 dark:text-red-400 mr-2">Queue Stopped</span>
+                      <span className="text-red-100 dark:text-red-400 mr-2">{t('jobs.stopped')}</span>
                       <button
                         onClick={async () => {
                           await startQueue(gpuKey);
@@ -320,7 +323,7 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
                         }}
                         className="ml-2 sm:ml-4 text-xs text-white bg-green-600 hover:bg-green-700 px-2 py-1 rounded"
                       >
-                        START
+                        {t('jobs.start')}
                       </button>
                     </>
                   )}
@@ -344,7 +347,7 @@ export default function JobsTable({ onlyActive = false, job_type = null }: JobsT
         <div className="mb-6 opacity-50">
           <div className="text-md flex px-4 py-1 rounded-t-lg bg-slate-600">
             <div className="flex items-center space-x-2 flex-1 py-2">
-              <h2 className="font-semibold text-gray-100">Idle</h2>
+              <h2 className="font-semibold text-gray-100">{t('jobs.idle')}</h2>
             </div>
           </div>
           <UniversalTable columns={columns} rows={jobsDict['Idle'].jobs} isLoading={isLoading} onRefresh={refresh} />

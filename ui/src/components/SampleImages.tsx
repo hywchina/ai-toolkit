@@ -11,6 +11,7 @@ import { apiClient } from '@/utils/api';
 import classNames from 'classnames';
 import { FaCaretDown, FaCaretUp } from 'react-icons/fa';
 import SampleImageViewer from './SampleImageViewer';
+import { useLanguage } from './LanguageProvider';
 
 interface SampleImagesMenuProps {
   job?: Job | null;
@@ -71,6 +72,7 @@ interface SampleImagesProps {
 }
 
 export default function SampleImages({ job }: SampleImagesProps) {
+  const { translate } = useLanguage();
   const { sampleImages, status, refreshSampleImages } = useSampleImages(job.id, 5000);
   const [selectedSamplePath, setSelectedSamplePath] = useState<string | null>(null);
   const [scrollParent, setScrollParent] = useState<HTMLDivElement | null>(null);
@@ -310,14 +312,14 @@ export default function SampleImages({ job }: SampleImagesProps) {
       <div
         className="hidden md:flex fixed top-20 mt-4 right-6 w-10 h-10 rounded-full bg-gray-900 shadow-lg items-center justify-center text-white opacity-80 hover:opacity-100 cursor-pointer"
         onClick={scrollToTop}
-        title="Scroll to Top"
+        title={translate('Scroll to Top')}
       >
         <FaCaretUp className="text-gray-500 dark:text-gray-400" />
       </div>
       <div
         className="hidden md:flex fixed bottom-5 right-6 w-10 h-10 rounded-full bg-gray-900 shadow-lg items-center justify-center text-white opacity-80 hover:opacity-100 cursor-pointer"
         onClick={scrollToBottom}
-        title="Scroll to Bottom"
+        title={translate('Scroll to Bottom')}
       >
         <FaCaretDown className="text-gray-500 dark:text-gray-400" />
       </div>

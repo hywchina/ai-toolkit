@@ -6,6 +6,7 @@ import { apiClient } from '@/utils/api';
 import AudioPlayer from './AudioPlayer';
 import { isVideo, isAudio } from '@/utils/basic';
 import useCaptionBatch, { setCachedCaption } from '@/hooks/useCaptionBatch';
+import { useLanguage } from './LanguageProvider';
 
 interface DatasetImageCardProps {
   imageUrl: string;
@@ -34,6 +35,7 @@ const DatasetImageCard: React.FC<DatasetImageCardProps> = ({
   rootMargin = '200px 0px',
   captionExt = 'txt',
 }) => {
+  const { translate } = useLanguage();
   const [loaded, setLoaded] = useState<boolean>(false);
   const [showAudioPlayer, setShowAudioPlayer] = useState(true);
   const [pollTick, setPollTick] = useState(0);
@@ -236,10 +238,14 @@ const DatasetImageCard: React.FC<DatasetImageCardProps> = ({
               className="bg-gray-800 rounded-full p-2"
               onClick={() => {
                 openConfirm({
-                  title: `Delete ${isItAVideo ? 'video' : 'image'}`,
-                  message: `Are you sure you want to delete this ${isItAVideo ? 'video' : 'image'}? This action cannot be undone.`,
+                  title: `${translate('Delete')} ${translate(isItAVideo ? 'video' : 'image')}`,
+                  message: translate(
+                    isItAVideo
+                      ? 'Are you sure you want to delete this video? This action cannot be undone.'
+                      : 'Are you sure you want to delete this image? This action cannot be undone.',
+                  ),
                   type: 'warning',
-                  confirmText: 'Delete',
+                  confirmText: translate('Delete'),
                   onConfirm: () => {
                     apiClient
                       .post('/api/img/delete', { imgPath: imageUrl })
@@ -285,7 +291,9 @@ const DatasetImageCard: React.FC<DatasetImageCardProps> = ({
             />
           </form>
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">Loading caption...</div>
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
+            {translate('Loading caption...')}
+          </div>
         )}
       </div>
     </div>

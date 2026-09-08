@@ -3,6 +3,7 @@ import React from 'react';
 import classNames from 'classnames';
 import ThemeLogo from './ThemeLogo';
 import { mobileSidebarState } from './Sidebar';
+import { useLanguage } from './LanguageProvider';
 
 interface Props {
   className?: string;
@@ -11,11 +12,12 @@ interface Props {
 
 const MobileMenuButton: React.FC = () => {
   const [, setIsMobileOpen] = mobileSidebarState.use();
+  const { t } = useLanguage();
   return (
     <button
       onClick={() => setIsMobileOpen(true)}
       className="md:hidden flex items-center ml-2 mr-1 px-1 py-1 rounded-md hover:bg-gray-800"
-      aria-label="Open menu"
+      aria-label={t('navigation.openMenu')}
     >
       <ThemeLogo />
     </button>

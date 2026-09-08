@@ -5,8 +5,10 @@ import classNames from 'classnames';
 import dynamic from 'next/dynamic';
 import { CircleHelp } from 'lucide-react';
 import { getDoc } from '@/docs';
+import { getDoc as getChineseDoc } from '@/docsZh';
 import { openDoc } from '@/components/DocModal';
 import { ConfigDoc, GroupedSelectOption, SelectOption } from '@/types';
+import { useLanguage } from './LanguageProvider';
 
 const Select = dynamic(() => import('react-select'), { ssr: false });
 
@@ -32,6 +34,7 @@ export interface TextInputProps extends InputProps {
 }
 
 export const TextInput = forwardRef<HTMLInputElement, TextInputProps>((props: TextInputProps, ref) => {
+  const { translate, language } = useLanguage();
   const {
     label,
     value,
@@ -46,13 +49,13 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>((props: Te
   } = props;
   let { doc } = props;
   if (!doc && docKey) {
-    doc = getDoc(docKey);
+    doc = language === 'zh' ? getChineseDoc(docKey) : getDoc(docKey);
   }
   return (
     <div className={classNames(className)}>
       {label && (
         <label className={labelClasses}>
-          {label}{' '}
+          {translate(label)}{' '}
           {doc && (
             <div className="inline-block ml-1 text-xs text-gray-500 cursor-pointer" onClick={() => openDoc(doc)}>
               <CircleHelp className="inline-block w-4 h-4 cursor-pointer" />
@@ -75,7 +78,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>((props: Te
               if (!disabled) onChange(e.target.value);
             }}
             className="flex-1 min-w-0 bg-transparent text-sm px-3 py-1 text-gray-100 placeholder:text-gray-500 focus:outline-none"
-            placeholder={placeholder}
+            placeholder={placeholder ? translate(placeholder) : undefined}
             required={required}
             disabled={disabled}
           />
@@ -92,7 +95,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>((props: Te
             if (!disabled) onChange(e.target.value);
           }}
           className={`${inputClasses} ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`}
-          placeholder={placeholder}
+          placeholder={placeholder ? translate(placeholder) : undefined}
           required={required}
           disabled={disabled}
         />
@@ -112,16 +115,17 @@ export interface TextAreaInputProps extends InputProps {
 }
 
 export const TextAreaInput = forwardRef<HTMLTextAreaElement, TextAreaInputProps>((props: TextAreaInputProps, ref) => {
+  const { translate, language } = useLanguage();
   const { label, value, onChange, placeholder, required, disabled, rows = 4, className, docKey = null } = props;
   let { doc } = props;
   if (!doc && docKey) {
-    doc = getDoc(docKey);
+    doc = language === 'zh' ? getChineseDoc(docKey) : getDoc(docKey);
   }
   return (
     <div className={classNames(className)}>
       {label && (
         <label className={labelClasses}>
-          {label}{' '}
+          {translate(label)}{' '}
           {doc && (
             <div className="inline-block ml-1 text-xs text-gray-500 cursor-pointer" onClick={() => openDoc(doc)}>
               <CircleHelp className="inline-block w-4 h-4 cursor-pointer" />
@@ -136,7 +140,7 @@ export const TextAreaInput = forwardRef<HTMLTextAreaElement, TextAreaInputProps>
           if (!disabled) onChange(e.target.value);
         }}
         className={`${inputClasses} ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`}
-        placeholder={placeholder}
+        placeholder={placeholder ? translate(placeholder) : undefined}
         required={required}
         disabled={disabled}
         rows={rows}
@@ -155,10 +159,11 @@ export interface NumberInputProps extends InputProps {
 }
 
 export const NumberInput = (props: NumberInputProps) => {
+  const { translate, language } = useLanguage();
   const { label, value, onChange, placeholder, required, min, max, docKey = null } = props;
   let { doc } = props;
   if (!doc && docKey) {
-    doc = getDoc(docKey);
+    doc = language === 'zh' ? getChineseDoc(docKey) : getDoc(docKey);
   }
 
   // Add controlled internal state to properly handle partial inputs
@@ -173,7 +178,7 @@ export const NumberInput = (props: NumberInputProps) => {
     <div className={classNames(props.className)}>
       {label && (
         <label className={labelClasses}>
-          {label}{' '}
+          {translate(label)}{' '}
           {doc && (
             <div className="inline-block ml-1 text-xs text-gray-500 cursor-pointer" onClick={() => openDoc(doc)}>
               <CircleHelp className="inline-block w-4 h-4 cursor-pointer" />
@@ -214,7 +219,7 @@ export const NumberInput = (props: NumberInputProps) => {
           }
         }}
         className={inputClasses}
-        placeholder={placeholder}
+        placeholder={placeholder ? translate(placeholder) : undefined}
         required={required}
         min={min}
         max={max}
@@ -244,17 +249,34 @@ export interface MultiSelectInputProps extends SelectInputPropsBase {
 export type SelectInputProps = SingleSelectInputProps | MultiSelectInputProps;
 
 export const SelectInput = (props: SelectInputProps) => {
+  const { translate, language } = useLanguage();
   const { label, value, onChange, options, docKey = null, multiple } = props;
   let { doc } = props;
   if (!doc && docKey) {
-    doc = getDoc(docKey);
+    doc = language === 'zh' ? getChineseDoc(docKey) : getDoc(docKey);
   }
 
+  const localizedOptions = options.map(option =>
+    'options' in option
+      ? {
+          ...option,
+          label: typeof option.label === 'string' ? translate(option.label) : option.label,
+          options: option.options.map(item => ({
+            ...item,
+            label: typeof item.label === 'string' ? translate(item.label) : item.label,
+          })),
+        }
+      : {
+          ...option,
+          label: typeof option.label === 'string' ? translate(option.label) : option.label,
+        },
+  );
+
   const flatOptions: SelectOption[] =
-    options && options.length > 0
-      ? 'options' in options[0]
-        ? (options as GroupedSelectOption[]).flatMap(group => group.options)
-        : (options as SelectOption[])
+    localizedOptions && localizedOptions.length > 0
+      ? 'options' in localizedOptions[0]
+        ? (localizedOptions as GroupedSelectOption[]).flatMap(group => group.options)
+        : (localizedOptions as SelectOption[])
       : [];
 
   const selectedOption = multiple
@@ -269,7 +291,7 @@ export const SelectInput = (props: SelectInputProps) => {
     >
       {label && (
         <label className={labelClasses}>
-          {label}{' '}
+          {translate(label)}{' '}
           {doc && (
             <div className="inline-block ml-1 text-xs text-gray-500 cursor-pointer" onClick={() => openDoc(doc)}>
               <CircleHelp className="inline-block w-4 h-4 cursor-pointer" />
@@ -279,7 +301,7 @@ export const SelectInput = (props: SelectInputProps) => {
       )}
       <Select
         value={selectedOption}
-        options={options}
+        options={localizedOptions}
         isDisabled={props.disabled}
         isMulti={multiple}
         className="aitk-react-select-container"
@@ -309,10 +331,11 @@ export interface CreatableSelectInputProps extends InputProps {
 const CUSTOM_SELECT_VALUE = '__custom__';
 
 export const CreatableSelectInput = (props: CreatableSelectInputProps) => {
+  const { translate, language } = useLanguage();
   const { label, value, onChange, options, docKey = null } = props;
   let { doc } = props;
   if (!doc && docKey) {
-    doc = getDoc(docKey);
+    doc = language === 'zh' ? getChineseDoc(docKey) : getDoc(docKey);
   }
 
   // Check if current value matches any predefined option
@@ -355,7 +378,7 @@ export const CreatableSelectInput = (props: CreatableSelectInputProps) => {
     >
       {label && (
         <label className={labelClasses}>
-          {label}{' '}
+          {translate(label)}{' '}
           {doc && (
             <div className="inline-block ml-1 text-xs text-gray-500 cursor-pointer" onClick={() => openDoc(doc)}>
               <CircleHelp className="inline-block w-4 h-4 cursor-pointer" />
@@ -367,7 +390,21 @@ export const CreatableSelectInput = (props: CreatableSelectInputProps) => {
         <div className={isCustom ? 'w-20 shrink-0' : 'w-full'}>
           <Select
             value={selectedOption}
-            options={selectOptions}
+            options={selectOptions.map(option =>
+              'options' in option
+                ? {
+                    ...option,
+                    label: typeof option.label === 'string' ? translate(option.label) : option.label,
+                    options: option.options.map(item => ({
+                      ...item,
+                      label: typeof item.label === 'string' ? translate(item.label) : item.label,
+                    })),
+                  }
+                : {
+                    ...option,
+                    label: typeof option.label === 'string' ? translate(option.label) : option.label,
+                  },
+            )}
             isDisabled={props.disabled}
             className="aitk-react-select-container"
             classNamePrefix="aitk-react-select"
@@ -376,7 +413,7 @@ export const CreatableSelectInput = (props: CreatableSelectInputProps) => {
             formatOptionLabel={(option: unknown) => {
               const opt = option as SelectOption;
               return opt.value === CUSTOM_SELECT_VALUE ? (
-                <span className="opacity-50 italic">~ Custom ~</span>
+                <span className="opacity-50 italic">~ {translate('Custom')} ~</span>
               ) : (
                 opt.label
               );
@@ -404,7 +441,7 @@ export const CreatableSelectInput = (props: CreatableSelectInputProps) => {
             value={value}
             onChange={e => onChange(e.target.value)}
             className={`${inputClasses} flex-1 min-w-0`}
-            placeholder={props.placeholder ?? 'Enter custom value'}
+            placeholder={translate(props.placeholder ?? 'Enter custom value')}
             disabled={props.disabled}
           />
         )}
@@ -425,10 +462,11 @@ export interface CheckboxProps {
 }
 
 export const Checkbox = (props: CheckboxProps) => {
+  const { translate, language } = useLanguage();
   const { label, checked, onChange, required, disabled } = props;
   let { doc } = props;
   if (!doc && props.docKey) {
-    doc = getDoc(props.docKey);
+    doc = language === 'zh' ? getChineseDoc(props.docKey) : getDoc(props.docKey);
   }
 
   const id = React.useId();
@@ -449,7 +487,7 @@ export const Checkbox = (props: CheckboxProps) => {
           disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-80',
         )}
       >
-        <span className="sr-only">Toggle {label}</span>
+        <span className="sr-only">{typeof label === 'string' ? translate(label) : label}</span>
         <span
           className={classNames(
             'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
@@ -466,7 +504,7 @@ export const Checkbox = (props: CheckboxProps) => {
               disabled ? 'text-gray-500' : 'text-gray-300',
             )}
           >
-            {label}
+            {typeof label === 'string' ? translate(label) : label}
           </label>
           {doc && (
             <div className="inline-block ml-1 text-xs text-gray-500 cursor-pointer" onClick={() => openDoc(doc)}>
@@ -488,16 +526,17 @@ interface FormGroupProps {
 }
 
 export const FormGroup: React.FC<FormGroupProps> = props => {
+  const { translate, language } = useLanguage();
   const { label, className, children, docKey = null } = props;
   let { doc } = props;
   if (!doc && docKey) {
-    doc = getDoc(docKey);
+    doc = language === 'zh' ? getChineseDoc(docKey) : getDoc(docKey);
   }
   return (
     <div className={classNames(className)}>
       {label && (
         <label className={classNames(labelClasses, 'mb-2')}>
-          {label}{' '}
+          {translate(label)}{' '}
           {doc && (
             <div className="inline-block ml-1 text-xs text-gray-500 cursor-pointer" onClick={() => openDoc(doc)}>
               <CircleHelp className="inline-block w-4 h-4 cursor-pointer" />
@@ -521,10 +560,11 @@ export interface SliderInputProps extends InputProps {
 }
 
 export const SliderInput: React.FC<SliderInputProps> = props => {
+  const { translate, language } = useLanguage();
   const { label, value, onChange, min, max, step = 1, disabled, className, docKey = null, showValue = true } = props;
   let { doc } = props;
   if (!doc && docKey) {
-    doc = getDoc(docKey);
+    doc = language === 'zh' ? getChineseDoc(docKey) : getDoc(docKey);
   }
 
   const trackRef = React.useRef<HTMLDivElement | null>(null);
@@ -597,7 +637,7 @@ export const SliderInput: React.FC<SliderInputProps> = props => {
     <div className={classNames(className, disabled ? 'opacity-30 cursor-not-allowed' : '')}>
       {label && (
         <label className={labelClasses}>
-          {label}{' '}
+          {translate(label)}{' '}
           {doc && (
             <div className="inline-block ml-1 text-xs text-gray-500 cursor-pointer" onClick={() => openDoc(doc)}>
               <CircleHelp className="inline-block w-4 h-4 cursor-pointer" />

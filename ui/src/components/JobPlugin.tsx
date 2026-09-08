@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { Job } from '@prisma/client';
 import { apiClient } from '@/utils/api';
+import { useLanguage } from './LanguageProvider';
 
 interface JobPluginProps {
   job: Job;
 }
 
 export default function JobPlugin({ job }: JobPluginProps) {
+  const { translate } = useLanguage();
   const [html, setHtml] = useState<string | null>(null);
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
@@ -28,10 +30,10 @@ export default function JobPlugin({ job }: JobPluginProps) {
   }, [job.id]);
 
   if (status === 'loading') {
-    return <p className="p-4">Loading plugin...</p>;
+    return <p className="p-4">{translate('Loading plugin...')}</p>;
   }
   if (status === 'error' || html == null) {
-    return <p className="p-4">Error loading plugin</p>;
+    return <p className="p-4">{translate('Error loading plugin')}</p>;
   }
 
   // Sandboxed iframe keeps the plugin's scripts and styles isolated from the app.

@@ -5,6 +5,7 @@ import useJobLossLog, { LossPoint } from '@/hooks/useJobLossLog';
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
+import { useLanguage } from './LanguageProvider';
 
 interface Props {
   job: Job;
@@ -149,6 +150,7 @@ function dulledColor(rgba: string): string {
 }
 
 export default function JobLossGraph({ job }: Props) {
+  const { translate } = useLanguage();
   const { series, lossKeys, status, refreshLoss } = useJobLossLog(job.id, 2000);
 
   // Controls
@@ -515,13 +517,13 @@ export default function JobLossGraph({ job }: Props) {
       <div className="bg-gray-800 px-4 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-blue-400" />
-          <h2 className="text-gray-100 text-sm font-medium">Loss graph</h2>
+          <h2 className="text-gray-100 text-sm font-medium">{translate('Loss graph')}</h2>
           <span className="text-xs text-gray-400">
-            {status === 'loading' && 'Loading...'}
-            {status === 'refreshing' && 'Refreshing...'}
-            {status === 'error' && 'Error'}
-            {status === 'success' && hasData && `${totalPoints.toLocaleString()} steps`}
-            {status === 'success' && !hasData && 'No data yet'}
+            {status === 'loading' && translate('Loading...')}
+            {status === 'refreshing' && translate('Refreshing...')}
+            {status === 'error' && translate('Error')}
+            {status === 'success' && hasData && `${totalPoints.toLocaleString()} ${translate('steps')}`}
+            {status === 'success' && !hasData && translate('No data yet')}
           </span>
         </div>
 
@@ -530,7 +532,7 @@ export default function JobLossGraph({ job }: Props) {
           onClick={refreshLoss}
           className="px-3 py-1 rounded-md text-xs bg-gray-700/60 hover:bg-gray-700 text-gray-200 border border-gray-700"
         >
-          Refresh
+          {translate('Refresh')}
         </button>
       </div>
 
@@ -542,7 +544,7 @@ export default function JobLossGraph({ job }: Props) {
         >
           {!hasData ? (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
-              {status === 'error' ? 'Failed to load loss logs.' : 'Waiting for loss points...'}
+              {translate(status === 'error' ? 'Failed to load loss logs.' : 'Waiting for loss points...')}
             </div>
           ) : (
             <>
@@ -567,18 +569,22 @@ export default function JobLossGraph({ job }: Props) {
       <div className="px-4 pb-2 shrink-0">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="bg-gray-950 border border-gray-800 rounded-lg p-3">
-            <label className="block text-xs text-gray-400 mb-2">Display</label>
+            <label className="block text-xs text-gray-400 mb-2">{translate('Display')}</label>
             <div className="flex flex-wrap gap-2">
-              <ToggleButton checked={showTrend} onClick={() => setShowTrend(v => !v)} label="Trend" />
-              <ToggleButton checked={useLogScale} onClick={() => setUseLogScale(v => !v)} label="Log Y" />
-              <ToggleButton checked={clipOutliers} onClick={() => setClipOutliers(v => !v)} label="Clip outliers" />
+              <ToggleButton checked={showTrend} onClick={() => setShowTrend(v => !v)} label={translate('Trend')} />
+              <ToggleButton checked={useLogScale} onClick={() => setUseLogScale(v => !v)} label={translate('Log Y')} />
+              <ToggleButton
+                checked={clipOutliers}
+                onClick={() => setClipOutliers(v => !v)}
+                label={translate('Clip outliers')}
+              />
             </div>
           </div>
 
           <div className="bg-gray-950 border border-gray-800 rounded-lg p-3">
-            <label className="block text-xs text-gray-400 mb-2">Series</label>
+            <label className="block text-xs text-gray-400 mb-2">{translate('Series')}</label>
             {lossKeys.length === 0 ? (
-              <div className="text-sm text-gray-400">No loss keys found yet.</div>
+              <div className="text-sm text-gray-400">{translate('No loss keys found yet.')}</div>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {lossKeys.map(k => (
@@ -605,7 +611,7 @@ export default function JobLossGraph({ job }: Props) {
 
           <div className="bg-gray-950 border border-gray-800 rounded-lg p-3">
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs text-gray-400">Smoothing</label>
+              <label className="block text-xs text-gray-400">{translate('Smoothing')}</label>
               <span className="text-xs text-gray-300">{smoothing}%</span>
             </div>
             <input
@@ -620,8 +626,10 @@ export default function JobLossGraph({ job }: Props) {
 
           <div className="bg-gray-950 border border-gray-800 rounded-lg p-3">
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs text-gray-400">Plot stride</label>
-              <span className="text-xs text-gray-300">every {plotStride} pt</span>
+              <label className="block text-xs text-gray-400">{translate('Plot stride')}</label>
+              <span className="text-xs text-gray-300">
+                {translate('every')} {plotStride} {translate('pt')}
+              </span>
             </div>
             <input
               type="range"
@@ -631,7 +639,7 @@ export default function JobLossGraph({ job }: Props) {
               onChange={e => setPlotStride(Number(e.target.value))}
               className="w-full accent-blue-500"
             />
-            <div className="mt-2 text-[11px] text-gray-500">UI downsample for huge runs.</div>
+            <div className="mt-2 text-[11px] text-gray-500">{translate('UI downsample for huge runs.')}</div>
           </div>
         </div>
       </div>

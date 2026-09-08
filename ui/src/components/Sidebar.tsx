@@ -10,12 +10,15 @@ import ThemeToggle from './ThemeToggle';
 import ThemeLogo from './ThemeLogo';
 import ActiveJobWidget from './ActiveJobWidget';
 import OstrisCloudBalance from './OstrisCloudBalance';
+import LanguageToggle from './LanguageToggle';
+import { useLanguage } from './LanguageProvider';
 
 export const mobileSidebarState = createGlobalState<boolean>(false);
 
 const Sidebar = () => {
   const [isMobileOpen, setIsMobileOpen] = mobileSidebarState.use();
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -35,11 +38,11 @@ const Sidebar = () => {
   }, [isMobileOpen]);
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'New Job', href: '/jobs/new', icon: Plus },
-    { name: 'Queue', href: '/jobs', icon: BrainCircuit },
-    { name: 'Datasets', href: '/datasets', icon: Images },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { name: t('navigation.dashboard'), href: '/dashboard', icon: Home },
+    { name: t('navigation.newJob'), href: '/jobs/new', icon: Plus },
+    { name: t('navigation.queue'), href: '/jobs', icon: BrainCircuit },
+    { name: t('navigation.datasets'), href: '/datasets', icon: Images },
+    { name: t('navigation.settings'), href: '/settings', icon: Settings },
   ];
 
   const socialsBoxClass =
@@ -57,7 +60,7 @@ const Sidebar = () => {
         <button
           onClick={() => setIsMobileOpen(false)}
           className="md:hidden text-gray-400 hover:text-white p-1"
-          aria-label="Close menu"
+          aria-label={t('navigation.closeMenu')}
         >
           <X className="w-5 h-5" />
         </button>
@@ -98,12 +101,12 @@ const Sidebar = () => {
             fill="#c0392b"
           />
         </svg>
-        <span className="uppercase text-sm font-medium tracking-wide">Support AI-Toolkit</span>
+        <span className="uppercase text-sm font-medium tracking-wide">{t('navigation.support')}</span>
       </a>
 
       {/* Social links grid */}
       <div className="px-1 py-1 border-t border-gray-800">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-5 gap-3">
           <a href="https://discord.gg/VXmU2f5WEU" target="_blank" rel="noreferrer" className={socialsBoxClass}>
             <FaDiscord className={socialIconClass} />
           </a>
@@ -114,6 +117,7 @@ const Sidebar = () => {
             <FaXTwitter className={socialIconClass} />
           </a>
           <ThemeToggle />
+          <LanguageToggle />
         </div>
       </div>
       <div className="text-center text-[10px] text-gray-400 py-1 bg-gray-800">

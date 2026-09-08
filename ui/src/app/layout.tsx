@@ -12,6 +12,7 @@ import { CaptionDatasetModal } from '@/components/CaptionDatasetModal';
 import MergeLoRAsModal from '@/components/MergeLoRAsModal';
 import UpsamplePromptsModal from '@/components/UpsamplePromptsModal';
 import PromptBoxEditorModal from '@/components/PromptBoxEditorModal';
+import { LanguageProvider } from '@/components/LanguageProvider';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               (function() {
                 var theme = localStorage.getItem('theme') || 'dark';
                 if (theme === 'dark') document.documentElement.classList.add('dark');
+                var language = localStorage.getItem('language');
+                if (!language) language = navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+                document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
               })();
             `,
           }}
@@ -51,22 +55,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         <script dangerouslySetInnerHTML={{ __html: `window.server_platform = "${platform}";` }} />
-        <ThemeProvider>
-          <AuthWrapper authRequired={authRequired}>
-            <div className="flex h-screen bg-gray-950">
-              <Sidebar />
-              <main className="flex-1 overflow-auto bg-gray-950 text-gray-100 relative">
-                <Suspense>{children}</Suspense>
-              </main>
-            </div>
-          </AuthWrapper>
-        </ThemeProvider>
-        <ConfirmModal />
-        <DocModal />
-        <CaptionDatasetModal />
-        <MergeLoRAsModal />
-        <UpsamplePromptsModal />
-        <PromptBoxEditorModal />
+        <LanguageProvider>
+          <ThemeProvider>
+            <AuthWrapper authRequired={authRequired}>
+              <div className="flex h-screen bg-gray-950">
+                <Sidebar />
+                <main className="flex-1 overflow-auto bg-gray-950 text-gray-100 relative">
+                  <Suspense>{children}</Suspense>
+                </main>
+              </div>
+            </AuthWrapper>
+          </ThemeProvider>
+          <ConfirmModal />
+          <DocModal />
+          <CaptionDatasetModal />
+          <MergeLoRAsModal />
+          <UpsamplePromptsModal />
+          <PromptBoxEditorModal />
+        </LanguageProvider>
       </body>
     </html>
   );

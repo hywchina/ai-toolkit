@@ -5,8 +5,10 @@ import { openMergeLoRAsModal } from './MergeLoRAsModal';
 import { getFilename, getFoldername } from '@/utils/basic';
 import { openConfirm } from './ConfirmModal';
 import { apiClient } from '@/utils/api';
+import { useLanguage } from './LanguageProvider';
 
 export default function FilesWidget({ jobID, jobName }: { jobID: string; jobName: string }) {
+  const { translate } = useLanguage();
   const { files, status, refreshFiles } = useFilesList(jobID, 5000);
 
   const isOptimizerFile = (filePath: string) => getFilename(filePath) === 'optimizer.pt';
@@ -28,10 +30,10 @@ export default function FilesWidget({ jobID, jobName }: { jobID: string; jobName
   const handleDeleteFile = (filePath: string) => {
     const fileName = getFilename(filePath);
     openConfirm({
-      title: 'Delete Checkpoint',
-      message: `Are you sure you want to delete "${fileName}"? This action cannot be undone.`,
+      title: translate('Delete Checkpoint'),
+      message: `${translate('Are you sure you want to delete this checkpoint? This action cannot be undone.')} (${fileName})`,
       type: 'warning',
-      confirmText: 'Delete',
+      confirmText: translate('Delete'),
       onConfirm: () => {
         apiClient
           .post('/api/files/delete', { filePath })
@@ -50,7 +52,7 @@ export default function FilesWidget({ jobID, jobName }: { jobID: string; jobName
       <div className="bg-gray-800 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-          <h2 className="font-semibold text-gray-100">Checkpoints</h2>
+          <h2 className="font-semibold text-gray-100">{translate('Checkpoints')}</h2>
           <span className="px-2 py-0.5 bg-gray-700 rounded-full text-xs text-gray-300">{checkpointFiles.length}</span>
         </div>
         {checkpointFiles.length > 0 && (
@@ -68,7 +70,7 @@ export default function FilesWidget({ jobID, jobName }: { jobID: string; jobName
               );
             }}
           >
-            merge
+            {translate('merge')}
           </span>
         )}
       </div>
@@ -83,7 +85,7 @@ export default function FilesWidget({ jobID, jobName }: { jobID: string; jobName
         {status === 'error' && (
           <div className="flex items-center justify-center py-4 text-rose-400 space-x-2">
             <AlertCircle className="w-4 h-4" />
-            <span className="text-sm">Error loading checkpoints</span>
+            <span className="text-sm">{translate('Error loading checkpoints')}</span>
           </div>
         )}
 
@@ -125,7 +127,7 @@ export default function FilesWidget({ jobID, jobName }: { jobID: string; jobName
                       type="button"
                       onClick={() => handleDeleteFile(file.path)}
                       className="bg-red-500 bg-opacity-0 group-hover:bg-opacity-10 hover:!bg-opacity-30 rounded-full p-1 transition-all"
-                      title="Delete checkpoint"
+                      title={translate('Delete checkpoint')}
                     >
                       <Trash2 className="w-3 h-3 text-red-500" />
                     </button>
@@ -162,7 +164,7 @@ export default function FilesWidget({ jobID, jobName }: { jobID: string; jobName
                     type="button"
                     onClick={() => handleDeleteFile(optimizerFile.path)}
                     className="bg-red-500 bg-opacity-0 group-hover:bg-opacity-10 hover:!bg-opacity-30 rounded-full p-1 transition-all"
-                    title="Delete optimizer state"
+                    title={translate('Delete optimizer state')}
                   >
                     <Trash2 className="w-3 h-3 text-red-500" />
                   </button>
@@ -173,7 +175,7 @@ export default function FilesWidget({ jobID, jobName }: { jobID: string; jobName
         )}
 
         {['success', 'refreshing'].includes(status) && files.length === 0 && (
-          <div className="text-center py-4 text-gray-400 text-sm">No checkpoints available</div>
+          <div className="text-center py-4 text-gray-400 text-sm">{translate('No checkpoints available')}</div>
         )}
       </div>
     </div>

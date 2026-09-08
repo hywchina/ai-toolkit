@@ -8,6 +8,7 @@ import { TextInput } from './formInputs';
 import React from 'react';
 import { useFromNull } from '@/hooks/useFromNull';
 import classNames from 'classnames';
+import { useLanguage } from './LanguageProvider';
 
 export interface ConfirmState {
   title: string;
@@ -26,6 +27,7 @@ export const openConfirm = (confirmProps: ConfirmState) => {
 };
 
 export default function ConfirmModal() {
+  const { t } = useLanguage();
   const [confirm, setConfirm] = confirmstate.use();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState<string>('');
@@ -160,10 +162,12 @@ export default function ConfirmModal() {
                   <div className="mt-2">
                     <p className="text-sm text-gray-200">{confirm?.message}</p>
                     <div className={classNames('mt-4 w-full', { hidden: !confirm?.inputTitle })}>
-                      <form onSubmit={(e) => {
-                        e.preventDefault()
-                        onConfirm()
-                      }}>
+                      <form
+                        onSubmit={e => {
+                          e.preventDefault();
+                          onConfirm();
+                        }}
+                      >
                         <TextInput
                           value={inputValue}
                           ref={inputRef}
@@ -182,7 +186,7 @@ export default function ConfirmModal() {
                 onClick={onConfirm}
                 className={`inline-flex w-full justify-center rounded-md ${getButtonBgColor()} px-3 py-2 text-sm font-semibold text-white shadow-xs sm:ml-3 sm:w-auto`}
               >
-                {confirm?.confirmText || 'Confirm'}
+                {confirm?.confirmText || t('common.confirm')}
               </button>
               <button
                 type="button"
@@ -190,7 +194,7 @@ export default function ConfirmModal() {
                 onClick={onCancel}
                 className="mt-3 inline-flex w-full justify-center rounded-md bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800 sm:mt-0 sm:w-auto ring-0"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </DialogPanel>

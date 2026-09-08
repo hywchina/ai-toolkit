@@ -5,6 +5,7 @@ import { Check, X, Loader2, AlertTriangle } from 'lucide-react';
 import classNames from 'classnames';
 import { Modal } from './Modal';
 import { callScriptStream } from '@/utils/callScript';
+import { useLanguage } from './LanguageProvider';
 
 export interface UpsamplePromptItem {
   index: number; // index into the samples array (write-back target)
@@ -51,6 +52,7 @@ export function toAspectRatio(width?: number, height?: number): string {
 type RowStatus = 'idle' | 'queued' | 'running' | 'done' | 'failed';
 
 const UpsamplePromptsModal: React.FC = () => {
+  const { translate } = useLanguage();
   const [modalInfo, setModalInfo] = upsamplePromptsModalState.use();
   const isOpen = modalInfo !== null;
 
@@ -178,14 +180,14 @@ const UpsamplePromptsModal: React.FC = () => {
         if (finalEvent?.type === 'error' && finalEvent.message) {
           append(`\n${finalEvent.message}\n`);
         } else if (finalEvent?.type === 'exit' && finalEvent.timedOut) {
-          append('\nScript timed out.\n');
+          append(`\n${translate('Script timed out.')}\n`);
         } else if (finalEvent?.type === 'exit') {
           append(`\nScript exited with code ${finalEvent.exitCode}.\n`);
         }
       }
     } catch (err: any) {
       setHasError(true);
-      append(`\n${err?.message || 'Unknown error'}\n`);
+      append(`\n${err?.message || translate('Unknown error')}\n`);
     } finally {
       // Anything still queued/running never reported a result -> failed.
       setStatus(prev => {
@@ -212,7 +214,7 @@ const UpsamplePromptsModal: React.FC = () => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Upsample Prompts"
+      title={translate('Upsample Prompts')}
       size="lg"
       showCloseButton={!isRunning}
       closeOnOverlayClick={!isRunning}
@@ -220,31 +222,32 @@ const UpsamplePromptsModal: React.FC = () => {
       <div>
         <div className="mb-3 flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-          <span>
-            This loads a model and runs on the GPU. You need at least 13GB of free VRAM to run this, so make sure the
-            GPU is idle (no training or other jobs running) before starting, or it may run out of memory.
-          </span>
+          <span>{translate('Upsample GPU warning')}</span>
         </div>
 
         <div className="mb-2 flex items-center justify-between text-sm">
           <div className="text-gray-400">
-            {isRunning && <span className="text-amber-400">Upsampling... please do not close this window.</span>}
-            {isDone && hasError && <span className="text-rose-400">Finished with errors. See log below.</span>}
-            {isDone && !hasError && <span className="text-emerald-400">Upsampling complete.</span>}
+            {isRunning && (
+              <span className="text-amber-400">{translate('Upsampling... please do not close this window.')}</span>
+            )}
+            {isDone && hasError && (
+              <span className="text-rose-400">{translate('Finished with errors. See log below.')}</span>
+            )}
+            {isDone && !hasError && <span className="text-emerald-400">{translate('Upsampling complete.')}</span>}
             {!isRunning && !isDone && (
               <span>
-                Select prompts to upsample into structured Ideogram captions. {selectedCount}/{prompts.length} selected.
+                {translate('Select prompts to upsample')} {selectedCount}/{prompts.length}
               </span>
             )}
           </div>
           {!isRunning && !isDone && (
             <div className="flex gap-2 flex-shrink-0">
               <button type="button" onClick={() => setAll(true)} className="text-xs text-gray-300 hover:text-gray-100">
-                Select all
+                {translate('Select all')}
               </button>
               <span className="text-gray-600">|</span>
               <button type="button" onClick={() => setAll(false)} className="text-xs text-gray-300 hover:text-gray-100">
-                None
+                {translate('None')}
               </button>
             </div>
           )}
@@ -263,23 +266,27 @@ const UpsamplePromptsModal: React.FC = () => {
               },
             )}
           >
-            Creative: {creative ? 'On' : 'Off'}
+            {translate('Creative')}: {translate(creative ? 'On' : 'Off')}
           </button>
           <span className="text-[11px] text-gray-500">
             {creative
-              ? 'Expands the idea — places the subject in a scene and adds fitting details.'
-              : 'Faithful — structures the prompt as given, with a minimal background.'}
+              ? translate('Expands the idea — places the subject in a scene and adds fitting details.')
+              : translate('Faithful — structures the prompt as given, with a minimal background.')}
           </span>
         </div>
 
         <div className="mb-3">
-          <label className="block text-[11px] mb-1 text-gray-400">Additional instructions (optional)</label>
+          <label className="block text-[11px] mb-1 text-gray-400">
+            {translate('Additional instructions (optional)')}
+          </label>
           <textarea
             value={instructions}
             onChange={e => setInstructions(e.target.value)}
             disabled={isRunning || isDone}
             rows={2}
-            placeholder="e.g. keep it a close-up portrait, prefer a daytime setting, always include a 9:16 vertical framing..."
+            placeholder={translate(
+              'e.g. keep it a close-up portrait, prefer a daytime setting, always include a 9:16 vertical framing...',
+            )}
             className="w-full text-xs px-2 py-1.5 bg-gray-950 border border-gray-700 rounded-md text-gray-100 placeholder-gray-600 focus:ring-1 focus:ring-gray-600 focus:outline-none resize-none disabled:opacity-50"
           />
         </div>
@@ -307,7 +314,7 @@ const UpsamplePromptsModal: React.FC = () => {
                     <span className="text-[10px] text-gray-500 flex-shrink-0">#{p.index + 1}</span>
                     <span className="text-[10px] text-gray-500 flex-shrink-0">{p.aspectRatio}</span>
                     {upsampled[p.index] && (
-                      <span className="text-[10px] text-emerald-400 flex-shrink-0">upsampled</span>
+                      <span className="text-[10px] text-emerald-400 flex-shrink-0">{translate('upsampled')}</span>
                     )}
                   </div>
                   <div
@@ -341,7 +348,7 @@ const UpsamplePromptsModal: React.FC = () => {
             disabled={isRunning}
             className="px-4 py-2 text-sm text-gray-300 hover:text-gray-100 disabled:opacity-40 disabled:cursor-not-allowed rounded-md"
           >
-            {isDone ? 'Close' : 'Cancel'}
+            {translate(isDone ? 'Close' : 'Cancel')}
           </button>
           {!isDone && (
             <button
@@ -350,7 +357,7 @@ const UpsamplePromptsModal: React.FC = () => {
               disabled={isRunning || selectedCount === 0}
               className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-md"
             >
-              {isRunning ? 'Upsampling...' : `Upsample (${selectedCount})`}
+              {isRunning ? translate('Upsampling...') : `${translate('Upsample')} (${selectedCount})`}
             </button>
           )}
         </div>

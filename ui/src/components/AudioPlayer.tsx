@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { apiClient } from '@/utils/api';
+import { useLanguage } from './LanguageProvider';
 
 type AudioPlayerProps = {
   src: string;
@@ -62,6 +63,7 @@ export default function AudioPlayer({
   onPlay,
   onPause,
 }: AudioPlayerProps) {
+  const { translate } = useLanguage();
   const tokenRef = useRef(`aud_${Math.random().toString(16).slice(2)}_${Date.now()}`);
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
@@ -443,7 +445,7 @@ export default function AudioPlayer({
             className="truncate text-gray-200"
             style={{ fontSize: titleSize, lineHeight: 1.1, letterSpacing: '0.01em' }}
           >
-            {title}
+            {translate(title)}
           </div>
           {subtitle ? (
             <div className="mt-1 truncate text-gray-400" style={{ fontSize: subSize, lineHeight: 1.15 }}>
@@ -479,8 +481,8 @@ export default function AudioPlayer({
                   'focus:outline-none focus:ring-2 focus:ring-gray-500/40',
                 ].join(' ')}
                 style={{ width: restartBtn, height: restartBtn }}
-                aria-label="Restart"
-                title="Restart"
+                aria-label={translate('Restart')}
+                title={translate('Restart')}
               >
                 <svg width={restartIcon} height={restartIcon} viewBox="0 0 24 24" className="mx-auto" aria-hidden>
                   <path d="M12 5a7 7 0 1 1-6.4 4H3l3.5-3.5L10 9H7.8A5 5 0 1 0 12 7v-2z" fill="currentColor" />
@@ -495,8 +497,8 @@ export default function AudioPlayer({
                   'focus:outline-none focus:ring-2 focus:ring-gray-500/40',
                 ].join(' ')}
                 style={{ width: playBtn, height: playBtn }}
-                aria-label={isPlaying ? 'Pause' : 'Play'}
-                title={isPlaying ? 'Pause' : 'Play'}
+                aria-label={translate(isPlaying ? 'Pause' : 'Play')}
+                title={translate(isPlaying ? 'Pause' : 'Play')}
               >
                 {!isPlaying ? (
                   <svg width={playIcon} height={playIcon} viewBox="0 0 24 24" className="mx-auto" aria-hidden>
@@ -509,7 +511,9 @@ export default function AudioPlayer({
                 )}
 
                 {isBuffering ? (
-                  <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-xs text-gray-300">Buffering…</div>
+                  <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-xs text-gray-300">
+                    {translate('Buffering…')}
+                  </div>
                 ) : null}
               </button>
             </div>
@@ -533,7 +537,7 @@ export default function AudioPlayer({
               onPointerMove={onBarPointerMove}
               onPointerUp={onBarPointerUp}
               onPointerCancel={() => setDragging(false)}
-              title="Scrub"
+              title={translate('Scrub')}
             >
               <div
                 className="absolute left-0 top-0 h-full rounded-full bg-gray-600"

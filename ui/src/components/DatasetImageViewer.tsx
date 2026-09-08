@@ -13,6 +13,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { BoundingBoxEditor, parseBoundingBoxes, extractBoxes } from './BoundingBoxOverlay';
 import IdeogramCaptionSidebar, { isIdeogramCaption } from './IdeogramCaptionSidebar';
 import datasetTemplates from '@/helpers/datasetTemplates';
+import { useLanguage } from './LanguageProvider';
 
 function safeParse(text: string): any {
   try {
@@ -39,6 +40,7 @@ export default function DatasetImageViewer({
   onCaptionSaved,
   captionExt = 'txt',
 }: Props) {
+  const { translate } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(Boolean(imgPath));
   const [caption, setCaption] = useState<string>('');
@@ -220,10 +222,10 @@ export default function DatasetImageViewer({
   const handleDelete = useCallback(() => {
     if (!imgPath) return;
     openConfirm({
-      title: 'Delete Image',
-      message: `Are you sure you want to delete this image? This action cannot be undone.`,
+      title: translate('Delete Image'),
+      message: translate('Are you sure you want to delete this image? This action cannot be undone.'),
       type: 'warning',
-      confirmText: 'Delete',
+      confirmText: translate('Delete'),
       onConfirm: () => {
         apiClient
           .post('/api/img/delete', { imgPath })
@@ -237,7 +239,7 @@ export default function DatasetImageViewer({
           });
       },
     });
-  }, [imgPath, onChange, refreshImages]);
+  }, [imgPath, onChange, refreshImages, translate]);
 
   // Mutate the caption JSON's element array, updating the textarea ONLY (no
   // network). Persisting happens via the Save button / nav auto-save. Returns
@@ -471,7 +473,7 @@ export default function DatasetImageViewer({
                         setIsDrawing(false);
                       }
                     }}
-                    title={showBoxes ? 'Hide bounding boxes' : 'Show & edit bounding boxes'}
+                    title={translate(showBoxes ? 'Hide bounding boxes' : 'Show & edit bounding boxes')}
                     className={classNames('bg-gray-900 rounded-full p-1 leading-[0px] hover:opacity-100', {
                       'opacity-100 text-blue-400': showBoxes,
                       'opacity-50': !showBoxes,
@@ -496,13 +498,13 @@ export default function DatasetImageViewer({
                             href={`/api/img/${encodeURIComponent(imgPath)}`}
                             download={filename}
                           >
-                            Download
+                            {translate('Download')}
                           </a>
                         </MenuItem>
                       )}
                       <MenuItem>
                         <div className="cursor-pointer px-4 py-1 hover:bg-gray-800 rounded" onClick={handleDelete}>
-                          Delete Image
+                          {translate('Delete Image')}
                         </div>
                       </MenuItem>
                     </MenuItems>
@@ -515,7 +517,7 @@ export default function DatasetImageViewer({
             <div className="bg-gray-950 w-full sm:w-96 shrink-0 flex flex-col gap-2 p-3 overflow-y-auto text-sm">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-xs text-gray-400 truncate min-w-0">
-                  <span className="text-gray-500 mr-1">File:</span>
+                  <span className="text-gray-500 mr-1">{translate('File')}:</span>
                   <span className="text-gray-300">{filename}</span>
                 </div>
                 <div className="text-xs text-gray-400 whitespace-nowrap">
@@ -531,7 +533,7 @@ export default function DatasetImageViewer({
                     if (template) setCaption(template.trim());
                   }}
                 >
-                  <option value="">Templates...</option>
+                  <option value="">{translate('Templates...')}</option>
                   {Object.keys(datasetTemplates).map(key => (
                     <option key={key} value={key}>
                       {key}
@@ -562,7 +564,7 @@ export default function DatasetImageViewer({
                 >
                   <textarea
                     className="w-full h-full bg-transparent text-gray-100 text-sm p-2 resize-none outline-none focus:ring-0 focus:outline-none"
-                    placeholder={isCaptionLoaded ? 'Add a caption...' : 'Loading caption...'}
+                    placeholder={translate(isCaptionLoaded ? 'Add a caption...' : 'Loading caption...')}
                     value={caption}
                     onChange={e => setCaption(e.target.value)}
                     onKeyDown={handleCaptionKeyDown}

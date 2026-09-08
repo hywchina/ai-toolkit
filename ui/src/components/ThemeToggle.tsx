@@ -2,9 +2,11 @@
 
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
+import { useLanguage } from './LanguageProvider';
 
 const ThemeToggle = () => {
   const { theme, toggleTheme } = useTheme();
+  const { t } = useLanguage();
 
   // Button styled as the opposite theme so it stands out
   const buttonClass =
@@ -16,7 +18,8 @@ const ThemeToggle = () => {
     <button
       onClick={toggleTheme}
       className={`flex items-center justify-center p-1 rounded-lg transition-colors ${buttonClass}`}
-      title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={theme === 'dark' ? t('theme.light') : t('theme.dark')}
+      aria-label={theme === 'dark' ? t('theme.light') : t('theme.dark')}
     >
       {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
     </button>

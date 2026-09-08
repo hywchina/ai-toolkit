@@ -6,6 +6,7 @@ import { useDropzone } from 'react-dropzone';
 import { FaUpload, FaImage, FaTimes } from 'react-icons/fa';
 import { apiClient } from '@/utils/api';
 import type { AxiosProgressEvent } from 'axios';
+import { useLanguage } from './LanguageProvider';
 
 interface Props {
   src: string | null | undefined;
@@ -20,6 +21,7 @@ export default function SampleControlImage({
   instruction = 'Add Control Image',
   onNewImageSelected,
 }: Props) {
+  const { translate } = useLanguage();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
@@ -141,7 +143,7 @@ export default function SampleControlImage({
         <div className="flex flex-col items-center justify-center text-gray-300 text-center">
           <FaImage className="opacity-80" />
           <div className="mt-1 text-[10px] font-semibold tracking-wide opacity-80">{instruction}</div>
-          <div className="mt-0.5 text-[9px] opacity-60">Click or drop</div>
+          <div className="mt-0.5 text-[9px] opacity-60">{translate('Click or drop')}</div>
         </div>
       )}
 
@@ -165,7 +167,7 @@ export default function SampleControlImage({
               )}
             >
               <FaUpload className="text-[10px]" />
-              <span>Replace</span>
+              <span>{translate('Replace')}</span>
             </div>
           </div>
 
@@ -173,8 +175,8 @@ export default function SampleControlImage({
           <button
             type="button"
             onClick={clearImage}
-            title="Clear image"
-            aria-label="Clear image"
+            title={translate('Clear image')}
+            aria-label={translate('Clear image')}
             className={classNames(
               'absolute right-1.5 top-1.5 z-10 inline-flex items-center justify-center',
               'h-5 w-5 rounded-md bg-black/55 text-white/90',
@@ -197,7 +199,9 @@ export default function SampleControlImage({
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
-            <div className="mt-1 text-[10px] font-medium text-white/90">Uploading… {uploadProgress}%</div>
+            <div className="mt-1 text-[10px] font-medium text-white/90">
+              {translate('Uploading…')} {uploadProgress}%
+            </div>
           </div>
         </div>
       )}

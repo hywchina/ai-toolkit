@@ -1,4 +1,5 @@
 import React, { Fragment, useEffect } from 'react';
+import { useLanguage } from './LanguageProvider';
 
 interface ModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export const Modal: React.FC<ModalProps> = ({
   size = 'md',
   closeOnOverlayClick = true,
 }) => {
+  const { translate } = useLanguage();
   // Close on ESC key press
   useEffect(() => {
     const handleEscKey = (e: KeyboardEvent) => {
@@ -85,7 +87,7 @@ export const Modal: React.FC<ModalProps> = ({
                   type="button"
                   className="ml-auto inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
                   onClick={onClose}
-                  aria-label="Close modal"
+                  aria-label={translate('Close modal')}
                 >
                   <svg
                     className="h-5 w-5"

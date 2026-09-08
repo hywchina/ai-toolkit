@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiClient, isAuthorizedState } from '@/utils/api';
 import { createGlobalState } from 'react-global-hooks';
+import { useLanguage } from './LanguageProvider';
 
 interface AuthWrapperProps {
   authRequired: boolean;
@@ -10,6 +11,7 @@ interface AuthWrapperProps {
 }
 
 export default function AuthWrapper({ authRequired, children }: AuthWrapperProps) {
+  const { t } = useLanguage();
   const [token, setToken] = useState('');
   // start with true, and deauth if needed
   const [isAuthorizedGlobal, setIsAuthorized] = isAuthorizedState.use();
@@ -55,12 +57,12 @@ export default function AuthWrapper({ authRequired, children }: AuthWrapperProps
         setIsAuthorized(true);
       } else {
         setIsAuthorized(false);
-        setError('Invalid token. Please try again.');
+        setError(t('auth.invalid'));
       }
     } catch (err) {
       setIsAuthorized(false);
       console.log(err);
-      setError('Invalid token. Please try again.');
+      setError(t('auth.invalid'));
     }
     setIsLoading(false);
   };
@@ -70,7 +72,7 @@ export default function AuthWrapper({ authRequired, children }: AuthWrapperProps
     setError('');
 
     if (!token.trim()) {
-      setError('Please enter your token');
+      setError(t('auth.required'));
       return;
     }
 
@@ -112,7 +114,7 @@ export default function AuthWrapper({ authRequired, children }: AuthWrapperProps
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="token" className="block text-sm font-medium text-gray-400 mb-2">
-                Password
+                {t('auth.password')}
               </label>
               <input
                 id="token"
@@ -124,11 +126,9 @@ export default function AuthWrapper({ authRequired, children }: AuthWrapperProps
                 ref={inputRef}
                 onChange={e => setToken(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 text-gray-100 transition duration-200"
-                placeholder="Enter your password"
+                placeholder={t('auth.placeholder')}
               />
-              <div className='text-gray-500 text-xs mt-2'>
-                The password is set with the environment variable AI_TOOLKIT_AUTH, the default is the super secure secret word "password"
-              </div>
+              <div className="text-gray-500 text-xs mt-2">{t('auth.help')}</div>
             </div>
 
             {error && (
@@ -155,7 +155,7 @@ export default function AuthWrapper({ authRequired, children }: AuthWrapperProps
                   ></path>
                 </svg>
               ) : (
-                'Check Password'
+                t('auth.check')
               )}
             </button>
           </form>

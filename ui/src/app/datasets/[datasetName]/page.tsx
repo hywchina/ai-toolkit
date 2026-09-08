@@ -15,8 +15,10 @@ import { pathJoin } from '@/utils/basic';
 import AutoCaptionButton from '@/components/AutoCaptionButton';
 import CaptionMonitor from '@/components/CaptionMonitor';
 import { CreatableSelectInput } from '@/components/formInputs';
+import { useLanguage } from '@/components/LanguageProvider';
 
 export default function DatasetPage({ params }: { params: { datasetName: string } }) {
+  const { translate } = useLanguage();
   const [imgList, setImgList] = useState<{ img_path: string }[]>([]);
   const [isAutoCaptioning, setIsAutoCaptioning] = useState(false);
   const usableParams = use(params as any) as { datasetName: string };
@@ -76,8 +78,8 @@ export default function DatasetPage({ params }: { params: { datasetName: string 
 
     if (status == 'loading') {
       icon = <LuLoader className="animate-spin w-8 h-8" />;
-      text = 'Loading Images';
-      subtitle = 'Please wait while we fetch your dataset images...';
+      text = translate('Loading Images');
+      subtitle = translate('Please wait while we fetch your dataset images...');
       showIt = true;
       bgColor = 'bg-gray-800/50';
       textColor = 'text-gray-100';
@@ -85,8 +87,8 @@ export default function DatasetPage({ params }: { params: { datasetName: string 
     }
     if (status == 'error') {
       icon = <LuBan className="w-8 h-8" />;
-      text = 'Error Loading Images';
-      subtitle = 'There was a problem fetching the images. Please try refreshing the page.';
+      text = translate('Error Loading Images');
+      subtitle = translate('There was a problem fetching the images. Please try refreshing the page.');
       showIt = true;
       bgColor = 'bg-red-600/20';
       textColor = 'text-red-100';
@@ -94,8 +96,8 @@ export default function DatasetPage({ params }: { params: { datasetName: string 
     }
     if (status == 'success' && imgList.length === 0) {
       icon = <LuImageOff className="w-8 h-8" />;
-      text = 'No Images Found';
-      subtitle = 'This dataset is empty. Click "Add Images" to get started.';
+      text = translate('No Images Found');
+      subtitle = translate('This dataset is empty. Click "Add Images" to get started.');
       showIt = true;
       bgColor = 'bg-gray-800/50';
       textColor = 'text-gray-100';
@@ -113,7 +115,7 @@ export default function DatasetPage({ params }: { params: { datasetName: string 
         <p className="text-sm opacity-75 leading-relaxed">{subtitle}</p>
       </div>
     );
-  }, [status, imgList.length]);
+  }, [status, imgList.length, translate]);
 
   return (
     <>
@@ -126,14 +128,16 @@ export default function DatasetPage({ params }: { params: { datasetName: string 
         </div>
         <div className="min-w-0 flex-shrink">
           <h1 className="text-base sm:text-lg truncate">
-            <span className="hidden sm:inline">Dataset: </span>
+            <span className="hidden sm:inline">{translate('Dataset')}: </span>
             {datasetName}
           </h1>
         </div>
         <div className="flex-1"></div>
         <div className="flex-shrink-0 flex items-center gap-1 sm:gap-2">
           <div className="flex items-center gap-1">
-            <label className="text-xs text-gray-400 hidden sm:inline whitespace-nowrap">Caption ext</label>
+            <label className="text-xs text-gray-400 hidden sm:inline whitespace-nowrap">
+              {translate('Caption Extension')}
+            </label>
             <CreatableSelectInput
               className="w-44"
               value={captionExt}
@@ -154,8 +158,8 @@ export default function DatasetPage({ params }: { params: { datasetName: string 
             className="text-white bg-slate-600 px-2 sm:px-3 py-1 rounded-md text-sm sm:text-base whitespace-nowrap"
             onClick={() => openImagesModal(datasetName, () => refreshImageList(datasetName))}
           >
-            <span className="sm:hidden">+ Add</span>
-            <span className="hidden sm:inline">Add Images</span>
+            <span className="sm:hidden">+ {translate('Add')}</span>
+            <span className="hidden sm:inline">{translate('Add Images')}</span>
           </Button>
         </div>
       </TopBar>

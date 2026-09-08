@@ -12,6 +12,7 @@ import { isVideo, isAudio } from '@/utils/basic';
 import AudioPlayer from './AudioPlayer';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import BoundingBoxOverlay, { parseBoundingBoxes } from './BoundingBoxOverlay';
+import { useLanguage } from './LanguageProvider';
 
 interface Props {
   imgPath: string | null; // current image path
@@ -30,6 +31,7 @@ export default function SampleImageViewer({
   onChange,
   refreshSampleImages,
 }: Props) {
+  const { translate } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(Boolean(imgPath));
   const [showingControlIdx, setShowingControlIdx] = useState<number | null>(null);
@@ -131,10 +133,10 @@ export default function SampleImageViewer({
   const handleDelete = useCallback(() => {
     if (!imgPath) return;
     openConfirm({
-      title: 'Delete Sample',
-      message: `Are you sure you want to delete this sample? This action cannot be undone.`,
+      title: translate('Delete Sample'),
+      message: translate('Are you sure you want to delete this sample? This action cannot be undone.'),
       type: 'warning',
-      confirmText: 'Delete',
+      confirmText: translate('Delete'),
       onConfirm: () => {
         apiClient
           .post('/api/img/delete', { imgPath: imgPath })
@@ -150,7 +152,7 @@ export default function SampleImageViewer({
           });
       },
     });
-  }, [imgPath, onChange, refreshSampleImages]);
+  }, [imgPath, onChange, refreshSampleImages, translate]);
 
   const sampleItem = useMemo<SampleItem | null>(() => {
     if (!sampleConfig) return null;
@@ -362,7 +364,7 @@ export default function SampleImageViewer({
                 {sampleItem?.prompt && (
                   <div className="absolute inset-0 grid place-items-center overflow-auto mr-4">
                     <div className="w-full">
-                      <span className="text-gray-400 mr-1">Prompt:</span>
+                      <span className="text-gray-400 mr-1">{translate('Prompt')}:</span>
                       <span className="whitespace-pre-wrap break-words">{sampleItem.prompt}</span>
                     </div>
                   </div>
@@ -411,7 +413,7 @@ export default function SampleImageViewer({
                 <button
                   type="button"
                   onClick={() => setShowBoxes(v => !v)}
-                  title={showBoxes ? 'Hide bounding boxes' : 'Show bounding boxes'}
+                  title={translate(showBoxes ? 'Hide bounding boxes' : 'Show bounding boxes')}
                   className={classNames('bg-gray-900 rounded-full p-1 leading-[0px] hover:opacity-100', {
                     'opacity-100 text-blue-400': showBoxes,
                     'opacity-50': !showBoxes,
@@ -436,13 +438,13 @@ export default function SampleImageViewer({
                           href={`/api/img/${encodeURIComponent(imgPath)}`}
                           download={imgPath.replace(/^.*[\\/]/, '')}
                         >
-                          Download
+                          {translate('Download')}
                         </a>
                       </MenuItem>
                     )}
                     <MenuItem>
                       <div className="cursor-pointer px-4 py-1 hover:bg-gray-800 rounded" onClick={handleDelete}>
-                        Delete Sample
+                        {translate('Delete Sample')}
                       </div>
                     </MenuItem>
                   </MenuItems>

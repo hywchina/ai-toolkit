@@ -15,6 +15,7 @@ import JobLossGraph from '@/components/JobLossGraph';
 import JobPlugin from '@/components/JobPlugin';
 import { Job } from '@prisma/client';
 import { apiClient } from '@/utils/api';
+import { useLanguage } from '@/components/LanguageProvider';
 
 type PageKey = 'overview' | 'samples' | 'config' | 'loss_log' | 'plugin';
 
@@ -70,6 +71,7 @@ const pages: Page[] = [
 ];
 
 export default function JobPage({ params }: { params: { jobID: string } }) {
+  const { translate } = useLanguage();
   const usableParams = use(params as any) as { jobID: string };
   const jobID = usableParams.jobID;
   const { job, status, refreshJob } = useJob(jobID, 5000);
@@ -94,9 +96,9 @@ export default function JobPage({ params }: { params: { jobID: string } }) {
 
   const jobType = job?.job_type || 'unknown';
 
-  let title = `Job: ${job?.name || 'Loading...'}`;
+  let title = `${translate('Job')}: ${job?.name || translate('Loading...')}`;
   if (jobType === 'caption') {
-    title = `Captioning: ${job?.job_ref || 'Loading...'}`;
+    title = `${translate('Captioning')}: ${job?.job_ref || translate('Loading...')}`;
   }
 
   return (
@@ -125,8 +127,8 @@ export default function JobPage({ params }: { params: { jobID: string } }) {
         )}
       </TopBar>
       <MainContent className={pages.find(page => page.value === pageKey)?.mainCss}>
-        {status === 'loading' && job == null && <p>Loading...</p>}
-        {status === 'error' && job == null && <p>Error fetching job</p>}
+        {status === 'loading' && job == null && <p>{translate('Loading...')}</p>}
+        {status === 'error' && job == null && <p>{translate('Error fetching job')}</p>}
         {job && (
           <>
             {pages.map(page => {
@@ -151,7 +153,7 @@ export default function JobPage({ params }: { params: { jobID: string } }) {
               className={`flex-1 sm:flex-initial justify-center px-2 sm:px-4 py-1 h-8 flex items-center gap-1.5 sm:flex-shrink-0 ${page.value === pageKey ? 'bg-gray-300 dark:bg-gray-700 text-white' : ''}`}
             >
               <page.icon className="text-sm" />
-              <span className="hidden sm:inline">{page.name}</span>
+              <span className="hidden sm:inline">{translate(page.name)}</span>
             </Button>
           );
         })}

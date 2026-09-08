@@ -8,12 +8,14 @@ import { getTotalSteps } from '@/utils/jobs';
 import { Cpu, HardDrive, Info, Gauge } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useJobLog from '@/hooks/useJobLog';
+import { useLanguage } from './LanguageProvider';
 
 interface JobOverviewProps {
   job: Job;
 }
 
 export default function JobOverview({ job }: JobOverviewProps) {
+  const { translate } = useLanguage();
   const gpuIds = useMemo(() => {
     if (job.gpu_ids === 'mps') {
       return [0]; // For MPS, we can just return a single GPU ID since it's virtualized
@@ -105,9 +107,9 @@ export default function JobOverview({ job }: JobOverviewProps) {
           {totalSteps > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Progress</span>
+                <span className="text-gray-400">{translate('Progress')}</span>
                 <span className="text-gray-200">
-                  Step {job.step} of {totalSteps}
+                  {translate('Step')} {job.step} / {totalSteps}
                 </span>
               </div>
               <div className="w-full bg-gray-800 rounded-full h-2">
@@ -121,7 +123,7 @@ export default function JobOverview({ job }: JobOverviewProps) {
             <div className="flex items-center space-x-4">
               <HardDrive className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <div>
-                <p className="text-xs text-gray-400">Job Name</p>
+                <p className="text-xs text-gray-400">{translate('Job Name')}</p>
                 <p className="text-sm font-medium text-gray-200">{job.name}</p>
               </div>
             </div>
@@ -129,7 +131,7 @@ export default function JobOverview({ job }: JobOverviewProps) {
             <div className="flex items-center space-x-4">
               <Cpu className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               <div>
-                <p className="text-xs text-gray-400">Assigned GPUs</p>
+                <p className="text-xs text-gray-400">{translate('Assigned GPUs')}</p>
                 <p className="text-sm font-medium text-gray-200">GPUs: {job.gpu_ids}</p>
               </div>
             </div>
@@ -137,7 +139,7 @@ export default function JobOverview({ job }: JobOverviewProps) {
             <div className="flex items-center space-x-4">
               <Gauge className="w-5 h-5 text-green-600 dark:text-green-400" />
               <div>
-                <p className="text-xs text-gray-400">Speed</p>
+                <p className="text-xs text-gray-400">{translate('Speed')}</p>
                 <p className="text-sm font-medium text-gray-200">{job.speed_string == '' ? '?' : job.speed_string}</p>
               </div>
             </div>
@@ -150,8 +152,8 @@ export default function JobOverview({ job }: JobOverviewProps) {
               className="text-xs text-gray-300 absolute inset-0 p-4 overflow-y-auto"
               onScroll={handleScroll}
             >
-              {statusLog === 'loading' && 'Loading log...'}
-              {statusLog === 'error' && 'Error loading log'}
+              {statusLog === 'loading' && translate('Loading log...')}
+              {statusLog === 'error' && translate('Error loading log')}
               {['success', 'refreshing'].includes(statusLog) && (
                 <div>
                   {logLines.map((line, index) => {

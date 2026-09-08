@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import classNames from 'classnames';
 import { Plus, Trash2, X, SquareDashed } from 'lucide-react';
 import { boxColor, boxColorAlpha } from './BoundingBoxOverlay';
+import { useLanguage } from './LanguageProvider';
 
 // Detects an Ideogram structured caption (the distinctive marker is the
 // compositional_deconstruction block). Used by the viewer to decide whether to
@@ -140,13 +141,14 @@ function TextAreaField({
 // Medium picker: a dropdown of the official tokens plus a "Custom…" escape hatch
 // that reveals a free-text input. Recognizes old/variant spellings via canonMedium.
 function MediumField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { translate } = useLanguage();
   const canon = canonMedium(value);
   const known = MEDIUM_OPTIONS.includes(canon);
   const [custom, setCustom] = useState(!known && (value || '').trim() !== '');
   const showCustom = custom || (!known && (value || '').trim() !== '');
   return (
     <label className="flex flex-col gap-0.5">
-      <span className="text-[10px] text-gray-400">Medium</span>
+      <span className="text-[10px] text-gray-400">{translate('Medium')}</span>
       <select
         value={showCustom ? '__custom__' : canon}
         onChange={e => {
@@ -164,13 +166,13 @@ function MediumField({ value, onChange }: { value: string; onChange: (v: string)
             {m}
           </option>
         ))}
-        <option value="__custom__">Custom…</option>
+        <option value="__custom__">{translate('Custom…')}</option>
       </select>
       {showCustom && (
         <input
           type="text"
           value={value}
-          placeholder="custom medium"
+          placeholder={translate('custom medium')}
           spellCheck={false}
           onChange={e => onChange(e.target.value)}
           className="mt-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-100 outline-none focus:border-blue-500"
@@ -181,6 +183,7 @@ function MediumField({ value, onChange }: { value: string; onChange: (v: string)
 }
 
 function ColorPalette({ colors, max, onChange }: { colors: string[]; max: number; onChange: (c: string[]) => void }) {
+  const { translate } = useLanguage();
   const setAt = (i: number, v: string) => onChange(colors.map((c, idx) => (idx === i ? v : c)));
   const removeAt = (i: number) => onChange(colors.filter((_, idx) => idx !== i));
   return (
@@ -192,7 +195,7 @@ function ColorPalette({ colors, max, onChange }: { colors: string[]; max: number
             value={toHex6(c)}
             onChange={e => setAt(i, toHex6(e.target.value))}
             className="w-5 h-5 rounded cursor-pointer bg-transparent border-0 p-0"
-            title="Pick color"
+            title={translate('Pick color')}
           />
           <input
             type="text"
@@ -205,7 +208,7 @@ function ColorPalette({ colors, max, onChange }: { colors: string[]; max: number
             type="button"
             onClick={() => removeAt(i)}
             className="text-gray-500 hover:text-rose-400"
-            title="Remove color"
+            title={translate('Remove color')}
           >
             <X className="w-3 h-3" />
           </button>
@@ -217,7 +220,7 @@ function ColorPalette({ colors, max, onChange }: { colors: string[]; max: number
           onClick={() => onChange([...colors, '#888888'])}
           className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-gray-200 border border-dashed border-gray-700 rounded px-1.5 py-1"
         >
-          <Plus className="w-3 h-3" /> Add
+          <Plus className="w-3 h-3" /> {translate('Add')}
         </button>
       )}
     </div>
@@ -245,6 +248,7 @@ export default function IdeogramCaptionSidebar({
   onSave,
   isDirty,
 }: Props) {
+  const { translate } = useLanguage();
   const [showRaw, setShowRaw] = useState(false);
 
   const data = useMemo(() => {
@@ -363,11 +367,11 @@ export default function IdeogramCaptionSidebar({
     <div className="flex flex-col gap-4 text-sm">
       {/* Header — stays pinned while the form scrolls */}
       <div className="sticky -top-3 z-20 -mx-3 -mt-3 px-3 pt-3 pb-2 bg-gray-950/95 backdrop-blur border-b border-gray-800 flex items-center gap-2">
-        <span className="text-xs font-semibold text-gray-200">Ideogram Caption</span>
+        <span className="text-xs font-semibold text-gray-200">{translate('Ideogram Caption')}</span>
         {isDirty && (
           <span
             className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_6px] shadow-blue-500/60"
-            title="Unsaved changes"
+            title={translate('Unsaved changes')}
           />
         )}
         <button
@@ -379,30 +383,34 @@ export default function IdeogramCaptionSidebar({
             'border-gray-700 text-gray-500 cursor-default': !isDirty,
           })}
         >
-          {isDirty ? 'Save' : 'Saved'}
+          {translate(isDirty ? 'Save' : 'Saved')}
         </button>
       </div>
 
       <TextAreaField
-        label="High-level description"
+        label={translate('High-level description')}
         value={data.high_level_description ?? ''}
         onChange={v => update(d => (d.high_level_description = v))}
         rows={3}
-        placeholder="One-sentence summary of the image..."
+        placeholder={translate('One-sentence summary of the image...')}
       />
 
-      <Section title="Style">
-        <TextField label="Aesthetics" value={style.aesthetics ?? ''} onChange={v => setStyle('aesthetics', v)} />
-        <TextField label="Lighting" value={style.lighting ?? ''} onChange={v => setStyle('lighting', v)} />
+      <Section title={translate('Style')}>
+        <TextField
+          label={translate('Aesthetics')}
+          value={style.aesthetics ?? ''}
+          onChange={v => setStyle('aesthetics', v)}
+        />
+        <TextField label={translate('Lighting')} value={style.lighting ?? ''} onChange={v => setStyle('lighting', v)} />
         <MediumField value={style.medium ?? ''} onChange={setMedium} />
         <TextField
-          label={photoBranch ? 'Photo (camera / film)' : 'Art style (rendering technique)'}
+          label={translate(photoBranch ? 'Photo (camera / film)' : 'Art style (rendering technique)')}
           value={renderValue}
           onChange={setRender}
-          placeholder={photoBranch ? '35mm film still, shallow depth of field' : 'flat vector, clean edges'}
+          placeholder={translate(photoBranch ? '35mm film still, shallow depth of field' : 'flat vector, clean edges')}
         />
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] text-gray-400">Color palette (max 16)</span>
+          <span className="text-[10px] text-gray-400">{translate('Color palette (max 16)')}</span>
           <ColorPalette
             colors={Array.isArray(style.color_palette) ? style.color_palette : []}
             max={16}
@@ -411,7 +419,7 @@ export default function IdeogramCaptionSidebar({
         </div>
       </Section>
 
-      <Section title="Background">
+      <Section title={translate('Background')}>
         <TextAreaField
           label=""
           value={decon.background ?? ''}
@@ -421,29 +429,29 @@ export default function IdeogramCaptionSidebar({
             })
           }
           rows={4}
-          placeholder="The scene shell: walls, floor, sky, ambient light..."
+          placeholder={translate('The scene shell: walls, floor, sky, ambient light...')}
         />
       </Section>
 
-      <Section title={`Elements (${elements.length})`}>
+      <Section title={`${translate('Elements')} (${elements.length})`}>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={addElement}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gray-600 text-gray-300 hover:bg-gray-800 text-xs transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" /> Add element
+            <Plus className="w-3.5 h-3.5" /> {translate('Add element')}
           </button>
           <button
             type="button"
             onClick={onToggleDrawing}
-            title="Draw a new box on the image"
+            title={translate('Draw a new box on the image')}
             className={classNames('flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs transition-colors', {
               'bg-blue-600 border-blue-500 text-white': isDrawing,
               'border-gray-600 text-gray-300 hover:bg-gray-800': !isDrawing,
             })}
           >
-            <SquareDashed className="w-3.5 h-3.5" /> {isDrawing ? 'Drawing… (esc to cancel)' : 'Draw box'}
+            <SquareDashed className="w-3.5 h-3.5" /> {translate(isDrawing ? 'Drawing… (esc to cancel)' : 'Draw box')}
           </button>
         </div>
 
@@ -474,7 +482,7 @@ export default function IdeogramCaptionSidebar({
                       'bg-gray-800 text-gray-400 hover:text-gray-200': !selected,
                     },
                   )}
-                  title="Select (highlights its box on the image)"
+                  title={translate('Select (highlights its box on the image)')}
                 >
                   <span
                     className="w-2.5 h-2.5 rounded-sm border border-black/30"
@@ -518,7 +526,7 @@ export default function IdeogramCaptionSidebar({
                   type="button"
                   onClick={() => removeElement(i)}
                   className="ml-auto text-gray-500 hover:text-rose-400 transition-colors"
-                  title="Delete element"
+                  title={translate('Delete element')}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -526,7 +534,7 @@ export default function IdeogramCaptionSidebar({
 
               {isText && (
                 <TextAreaField
-                  label="Text (rendered in image)"
+                  label={translate('Text (rendered in image)')}
                   value={el.text ?? ''}
                   onChange={v => setElement(i, e => (e.text = v))}
                   rows={2}
@@ -534,7 +542,7 @@ export default function IdeogramCaptionSidebar({
               )}
 
               <TextAreaField
-                label="Description"
+                label={translate('Description')}
                 value={el.desc ?? ''}
                 onChange={v => setElement(i, e => (e.desc = v))}
                 rows={3}
@@ -542,14 +550,16 @@ export default function IdeogramCaptionSidebar({
 
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-gray-400">Bounding box {bbox ? '' : '(none)'}</span>
+                  <span className="text-[10px] text-gray-400">
+                    {translate('Bounding box')} {bbox ? '' : translate('(none)')}
+                  </span>
                   {bbox ? (
                     <button
                       type="button"
                       onClick={() => setElement(i, e => delete e.bbox)}
                       className="text-[10px] text-rose-400 hover:text-rose-300"
                     >
-                      remove
+                      {translate('remove')}
                     </button>
                   ) : (
                     <button
@@ -557,7 +567,7 @@ export default function IdeogramCaptionSidebar({
                       onClick={() => setElement(i, e => (e.bbox = [250, 250, 750, 750]))}
                       className="text-[10px] text-blue-400 hover:text-blue-300"
                     >
-                      + add box
+                      + {translate('add box')}
                     </button>
                   )}
                 </div>
@@ -587,7 +597,7 @@ export default function IdeogramCaptionSidebar({
               </div>
 
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] text-gray-400">Colors (max 5)</span>
+                <span className="text-[10px] text-gray-400">{translate('Colors (max 5)')}</span>
                 <ColorPalette
                   colors={palette}
                   max={5}
@@ -611,7 +621,7 @@ export default function IdeogramCaptionSidebar({
           onClick={() => setShowRaw(s => !s)}
           className="text-[11px] text-gray-500 hover:text-gray-300"
         >
-          {showRaw ? '▾ Hide raw JSON' : '▸ Raw JSON'}
+          {showRaw ? `▾ ${translate('Hide raw JSON')}` : `▸ ${translate('Raw JSON')}`}
         </button>
         {showRaw && (
           <textarea

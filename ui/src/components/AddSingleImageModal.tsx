@@ -5,19 +5,20 @@ import { FaUpload } from 'react-icons/fa';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { apiClient } from '@/utils/api';
+import { useLanguage } from './LanguageProvider';
 
 export interface AddSingleImageModalState {
-
-  onComplete?: (imagePath: string|null) => void;
+  onComplete?: (imagePath: string | null) => void;
 }
 
 export const addSingleImageModalState = createGlobalState<AddSingleImageModalState | null>(null);
 
-export const openAddImageModal = (onComplete: (imagePath: string|null) => void) => {
-  addSingleImageModalState.set({onComplete });
+export const openAddImageModal = (onComplete: (imagePath: string | null) => void) => {
+  addSingleImageModalState.set({ onComplete });
 };
 
 export default function AddSingleImageModal() {
+  const { translate } = useLanguage();
   const [addSingleImageModalInfo, setAddSingleImageModalInfo] = addSingleImageModalState.use();
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -29,7 +30,7 @@ export default function AddSingleImageModal() {
     }
   };
 
-  const onDone = (imagePath: string|null) => {
+  const onDone = (imagePath: string | null) => {
     if (addSingleImageModalInfo?.onComplete && !isUploading) {
       addSingleImageModalInfo.onComplete(imagePath);
       setAddSingleImageModalInfo(null);
@@ -96,7 +97,7 @@ export default function AddSingleImageModal() {
             <div className="bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="text-center">
                 <DialogTitle as="h3" className="text-base font-semibold text-gray-200 mb-4">
-                  Add Control Image
+                  {translate('Add Control Image')}
                 </DialogTitle>
                 <div className="w-full">
                   <div
@@ -107,7 +108,9 @@ export default function AddSingleImageModal() {
                     <input {...getInputProps()} />
                     <FaUpload className="size-8 mb-3 text-gray-400" />
                     <p className="text-sm text-gray-200 text-center">
-                      {isDragActive ? 'Drop the image here...' : 'Drag & drop an image here, or click to select one'}
+                      {translate(
+                        isDragActive ? 'Drop the image here...' : 'Drag & drop an image here, or click to select one',
+                      )}
                     </p>
                   </div>
                   {isUploading && (
@@ -115,7 +118,9 @@ export default function AddSingleImageModal() {
                       <div className="w-full bg-gray-700 rounded-full h-2.5">
                         <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
                       </div>
-                      <p className="text-sm text-gray-300 mt-2 text-center">Uploading... {uploadProgress}%</p>
+                      <p className="text-sm text-gray-300 mt-2 text-center">
+                        {translate('Uploading...')} {uploadProgress}%
+                      </p>
                     </div>
                   )}
                 </div>
@@ -130,7 +135,7 @@ export default function AddSingleImageModal() {
                 className={`mt-3 inline-flex w-full justify-center rounded-md bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800 sm:mt-0 sm:w-auto ring-0
                   ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                Cancel
+                {translate('Cancel')}
               </button>
             </div>
           </DialogPanel>

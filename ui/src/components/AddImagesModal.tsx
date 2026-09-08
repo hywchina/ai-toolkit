@@ -5,6 +5,7 @@ import { FaUpload, FaTimesCircle, FaSpinner } from 'react-icons/fa';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { apiClient } from '@/utils/api';
+import { useLanguage } from './LanguageProvider';
 
 export interface AddImagesModalState {
   datasetName: string;
@@ -91,6 +92,7 @@ const VISIBLE_ROWS = 8;
 let nextId = 0;
 
 export default function AddImagesModal() {
+  const { translate } = useLanguage();
   const [modalInfo, setModalInfo] = addImagesModalState.use();
   const open = modalInfo !== null;
 
@@ -254,7 +256,7 @@ export default function AddImagesModal() {
             <div className="bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="text-center">
                 <DialogTitle as="h3" className="text-base font-semibold text-gray-200 mb-4">
-                  Add Images to: {datasetName}
+                  {translate('Add Images to:')} {datasetName}
                 </DialogTitle>
 
                 {/* Drop zone + click to select */}
@@ -270,11 +272,17 @@ export default function AddImagesModal() {
                     <FaUpload className="size-8 mb-3 text-gray-400" />
                     {!isUploading ? (
                       <>
-                        <p className="text-sm text-gray-200 text-center">Drag & drop files here or click to select</p>
-                        <p className="text-xs text-gray-400 mt-1">Images, videos, .txt or .json supported</p>
+                        <p className="text-sm text-gray-200 text-center">
+                          {translate('Drag & drop files here or click to select')}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {translate('Images, videos, .txt or .json supported')}
+                        </p>
                       </>
                     ) : (
-                      <p className="text-sm text-gray-200 text-center">Drop more files to add to queue</p>
+                      <p className="text-sm text-gray-200 text-center">
+                        {translate('Drop more files to add to queue')}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -315,7 +323,7 @@ export default function AddImagesModal() {
                   isUploading ? 'bg-red-600 hover:bg-red-500' : 'bg-gray-600 hover:bg-gray-500'
                 }`}
               >
-                {isUploading ? 'Cancel Upload' : 'Close'}
+                {translate(isUploading ? 'Cancel Upload' : 'Close')}
               </button>
             </div>
           </DialogPanel>
