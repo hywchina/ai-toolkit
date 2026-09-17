@@ -2,6 +2,13 @@
 
 每条记录以英文 commit 标题关联 Git 提交，正文描述中文变更动机、范围及验证。
 
+## fix(api): preserve cancellation state until the training process exits
+
+- 动机：容器真实运行中取消测试证明 SIGINT 被训练器写成 error；原停止接口过早释放队列，还可能向已完成任务的旧 PID 发送信号。
+- 范围：运行中任务先标记 stopping，训练器在错误收尾时识别显式 stop 请求，退出后由 Worker 清空 PID；对终态 stop 返回原状态。Windows 使用 execFile 避免拼接 shell 命令。扩展微型训练测试增加运行中取消与终态 no-op 检查。
+- 验证：本地串行 API 再次通过（35 次请求，轮询次数会随运行速度变化）；实际取消任务 85ea9d76-6dca-4d9b-b3f4-beb46b02637a 在 step=2 后为 stopped 且 pid=null。对已完成任务调用 stop 后保持 completed；Worker TypeScript 编译通过。容器重建后需复测同样流程。
+- 注意：停止仍使用 SIGINT；不能保证强制中断 checkpoint 写入时产物完整。新增停止状态不会自动恢复被用户停止的训练。
+
 ## fix(training): support serial data loading and verify tiny LoRA training
 
 - 动机：资源有限时需要 num_workers=0，实际训练发现 Linux 路径仍传 prefetch_factor，PyTorch 会拒绝初始化 DataLoader。

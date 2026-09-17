@@ -1,67 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 const prisma = new PrismaClient();
-const isWindows = process.platform === 'win32';
 
 export async function GET(request: NextRequest, { params }: { params: { jobID: string } }) {
   const { jobID } = await params;
-
-  const job = await prisma.job.findUnique({
-    where: { id: jobID },
+  const cancelled = await prisma.job.updateMany({
+    where: { id: jobID, status: 'queued' },
+    data: { stop: true, status: 'stopped', return_to_queue: false, info: 'Job stopped', pid: null },
   });
-
-  if (!job) {
-    return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+  const job = await prisma.job.findUnique({ where: { id: jobID } });
+  if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+  if (cancelled.count || !['running', 'stopping'].includes(job.status)) {
+    return NextResponse.json(job);
   }
-
-  if (job.status === 'queued' || job.status === 'stopped') {
-    await prisma.job.updateMany({
-      where: { id: jobID, status: { in: ['queued', 'stopped'] } },
-      data: { stop: true, status: 'stopped', return_to_queue: false, info: 'Job stopped', pid: null },
-    });
-    const current = await prisma.job.findUnique({ where: { id: jobID } });
-    if (!current || current.status === 'stopped') return NextResponse.json(current);
-    job.pid = current.pid;
-  }
-
-  await prisma.job.update({
-    where: { id: jobID },
-    data: {
-      stop: true,
-      info: 'Stopping job...',
-    },
+  // Keep the GPU queue occupied until the process actually exits.
+  await prisma.job.updateMany({
+    where: { id: jobID, status: { in: ['running', 'stopping'] } },
+    data: { stop: true, status: 'stopping', info: 'Stopping job...' },
   });
-
-  // Send SIGINT to the process if we have a PID
   if (job.pid != null) {
-    console.log(`Attempting to stop job ${jobID} with PID ${job.pid}`);
     try {
-      if (isWindows) {
-        // Windows doesn't support SIGINT for arbitrary processes.
-        // Use taskkill with /T (tree) to send a CTRL+C-like termination.
-        await execAsync(`taskkill /PID ${job.pid} /T /F`, { windowsHide: true });
+      if (process.platform === 'win32') {
+        await execFileAsync('taskkill', ['/PID', String(job.pid), '/T', '/F'], { windowsHide: true });
       } else {
         process.kill(job.pid, 'SIGINT');
       }
-      // if it killed it, mark it stopped in the database
-      await prisma.job.update({
-        where: { id: jobID },
-        data: {
-          status: 'stopped',
-          info: 'Job stopped',
-        },
-      });
-    } catch (e) {
-      // Process may have already exited — that's fine
-      console.error('Error sending signal to process:', e);
+    } catch (error: any) {
+      if (error.code === 'ESRCH') {
+        await prisma.job.updateMany({
+          where: { id: jobID, status: 'stopping', pid: job.pid },
+          data: { status: 'stopped', info: 'Process already exited', pid: null },
+        });
+      } else {
+        return NextResponse.json({ error: 'Failed to signal training process' }, { status: 500 });
+      }
     }
-  } else {
-    console.warn(`No PID found for job ${jobID}, cannot send stop signal`);
   }
-
-  return NextResponse.json(job);
+  return NextResponse.json(await prisma.job.findUnique({ where: { id: jobID } }));
 }

@@ -14,9 +14,10 @@ export default async function startJob(jobID: string) {
   });
   if (!claim.count) return;
   const fail = async (info: string) => {
+    const current = await prisma.job.findUnique({ where: { id: jobID } });
     await prisma.job.updateMany({
       where: { id: jobID, status: { in: ['running', 'stopping'] } },
-      data: { status: 'error', info, pid: null },
+      data: { status: current?.stop ? 'stopped' : 'error', info: current?.stop ? 'Job stopped' : info, pid: null },
     });
   };
   let logFd: number | undefined;
@@ -54,10 +55,15 @@ export default async function startJob(jobID: string) {
     // Install listeners before awaiting DB updates; preserve trainer terminal states.
     child.once('error', error => void fail(`Python launch failed: ${error.message}`).catch(console.error));
     child.once('exit', (code, signal) => {
-      void fail(`Python exited before completion (code=${code}, signal=${signal})`).catch(console.error);
+      void (async () => {
+        await fail(`Python exited before completion (code=${code}, signal=${signal})`);
+        if (child.pid) {
+          await prisma.job.updateMany({ where: { id: jobID, pid: child.pid }, data: { pid: null } });
+        }
+      })().catch(console.error);
     });
     if (child.pid) {
-      await prisma.job.updateMany({ where: { id: jobID, status: 'running' }, data: { pid: child.pid } });
+      await prisma.job.updateMany({ where: { id: jobID, status: { in: ['running', 'stopping'] } }, data: { pid: child.pid } });
       fs.writeFileSync(path.join(folder, 'pid.txt'), String(child.pid));
     }
     child.unref();

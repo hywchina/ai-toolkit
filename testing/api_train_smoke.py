@@ -65,7 +65,7 @@ def run(args):
                'model': {'name_or_path': args.model_path, 'arch': 'sd1'},
                'datasets': [{'folder_path': settings['DATASETS_FOLDER'] + '/' + name,
                              'resolution': [64], 'caption_ext': 'txt', 'num_workers': 0}],
-               'train': {'steps': 2, 'batch_size': 1, 'dtype': 'float32', 'optimizer': 'adamw',
+               'train': {'steps': 10000 if args.cancel else 2, 'batch_size': 1, 'dtype': 'float32', 'optimizer': 'adamw',
                          'lr': 0.0001, 'train_unet': True, 'train_text_encoder': False,
                          'noise_scheduler': 'ddpm', 'disable_sampling': True},
                'save': {'save_every': 2, 'dtype': 'float32', 'max_step_saves_to_keep': 1},
@@ -79,9 +79,16 @@ def run(args):
     call('GET', f'/api/jobs/{job_id}/start')
     call('GET', f'/api/queue/{args.gpu}/start')
     deadline = time.monotonic() + 180
+    cancelled = False
     while time.monotonic() < deadline:
         job = call('GET', '/api/jobs', params={'id': job_id}).json()
         print(job['status'], job['step'], job['info'], flush=True)
+        if args.cancel and not cancelled and job['step'] >= 1 and job['status'] == 'running':
+            call('GET', f'/api/jobs/{job_id}/stop')
+            cancelled = True
+            # Allow SIGINT handling and the worker's exit handler to settle.
+            time.sleep(3)
+            continue
         if job['status'] in ('error', 'completed', 'stopped'):
             break
         time.sleep(3)
@@ -89,6 +96,11 @@ def run(args):
         call('GET', f'/api/jobs/{job_id}/stop')
         raise TimeoutError(f'Training timed out: {job_id}')
     log = call('GET', f'/api/jobs/{job_id}/log').json()['log']
+    if args.cancel:
+        assert cancelled and job['status'] == 'stopped', (job['status'], job['info'])
+        assert job['pid'] is None, 'worker has not confirmed process exit'
+        print(json.dumps({'result': 'PASS', 'cancelled_job': job_id, 'steps_before_cancel': job['step']}))
+        return
     if job['status'] != 'completed':
         print(log[-12000:])
         raise RuntimeError('Training did not complete; retained test data for inspection')
@@ -107,6 +119,8 @@ def run(args):
         tensors = load(response.content)
         assert tensors and all(torch.isfinite(t).all() for t in tensors.values())
         assert any(torch.count_nonzero(t) > 0 for key, t in tensors.items() if 'lora_up' in key), 'LoRA weights were not updated'
+    # Stopping a terminal job is a no-op and must not signal a stale/reused PID.
+    assert call('GET', f'/api/jobs/{job_id}/stop').json()['status'] == 'completed'
     print(json.dumps({'result': 'PASS', 'job_id': job_id, 'steps': job['step'],
                       'loss_points': len(metrics['points']), 'lora_files': len(weights),
                       'training_verified': 'tiny random SD LoRA, not production quality'}))
@@ -119,6 +133,7 @@ if __name__ == '__main__':
     p.add_argument('--model-path')
     p.add_argument('--base-url', default='http://127.0.0.1:3000')
     p.add_argument('--gpu', default='0')
+    p.add_argument('--cancel', action='store_true', help='Cancel a real running job after its first training step')
     args = p.parse_args()
     if args.prepare_model:
         prepare(args.prepare_model)

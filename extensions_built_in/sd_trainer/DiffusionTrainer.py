@@ -283,6 +283,9 @@ class DiffusionTrainer(SDTrainer):
         super(DiffusionTrainer, self).on_error(e)
         if self.is_ui_trainer:
             try:
+                if self.should_stop():
+                    self.is_stopping = True
+                    self.update_status("stopped", "Job stopped")
                 if self.accelerator.is_main_process and not self.is_stopping:
                     self.update_status("error", str(e))
                 self.update_db_key("step", self.last_save_step)
