@@ -99,7 +99,7 @@ def run(args):
     if args.cancel:
         assert cancelled and job['status'] == 'stopped', (job['status'], job['info'])
         assert job['pid'] is None, 'worker has not confirmed process exit'
-        print(json.dumps({'result': 'PASS', 'cancelled_job': job_id, 'steps_before_cancel': job['step']}))
+        print(json.dumps({'result': 'PASS', 'cancelled_job': job_id, 'reported_step_after_stop': job['step']}))
         return
     if job['status'] != 'completed':
         print(log[-12000:])

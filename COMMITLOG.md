@@ -2,6 +2,13 @@
 
 每条记录以英文 commit 标题关联 Git 提交，正文描述中文变更动机、范围及验证。
 
+## test(docker): record serial API and LoRA deployment acceptance
+
+- 动机：区分接口响应、真正训练、主动取消与容器持久化的验收证据，避免将微型模型测试误报为生产模型/4090 验证。
+- 范围：新增 SERVICE_TEST_REPORT.md，更新实施计划完成情况；修正取消测试输出字段名为 reported_step_after_stop，避免把回滚到最近已保存步数误认为取消前训练步数。
+- 验证：最终镜像 28186b237647 在 RTX 3090 上运行健康，宿主机串行 API 35 次检查通过，另有 2 次清理请求。正常训练任务 6d277e08-f569-4d65-974e-741cccc4c791 完成两步且生成有效 LoRA；运行中取消任务 d6b822f9-241f-4b29-a208-4275de7e4655 最终 stopped/pid=null；已完成任务 stop 不改变状态。重启后任务状态与权重 SHA256 保持一致，GPU/CPU API 正常。
+- 注意：测试保留自身生成的训练产物和停止队列记录；未打包生产模型。基础依赖/npm 告警及未验证的 Flux2 9B/4090/多卡场景均明确写入报告。原用户 .gitignore 改动未提交；随机测试令牌仅在受限临时配置中保存。
+
 ## feat(docker): package the LoRA API with mounted models and persistent state
 
 - 动机：将当前本地 AI Toolkit 改造打包为单个可运行服务镜像，避免上游 Dockerfile 从 GitHub 覆盖本地源码或将业务模型打入镜像。
