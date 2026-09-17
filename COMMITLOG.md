@@ -2,6 +2,13 @@
 
 每条记录以英文 commit 标题关联 Git 提交，正文描述中文变更动机、范围及验证。
 
+## fix(training): support serial data loading and verify tiny LoRA training
+
+- 动机：资源有限时需要 num_workers=0，实际训练发现 Linux 路径仍传 prefetch_factor，PyTorch 会拒绝初始化 DataLoader。
+- 范围：仅在 num_workers>0 时传预取参数；新增真实训练 API 测试，离线生成随机微型 SD 模型，串行上传一张 64×64 图片、提交两步 rank=2 LoRA 训练、等待 completed、读取 loss/loss 并校验权重下载字节数。
+- 验证：RTX 3090 上成功完成任务 9ddef67f-8be4-4d3f-b800-45894a6e1620，step=2、1 个指标点、1 个 LoRA 权重文件。前置失败分别定位到 DataLoader 参数及测试夹具的 Transformers 5 tokenizer 参数，已修正后重测。
+- 注意：随机微型模型用于验证完整训练链路，不用于出图质量验证；本次未执行 Flux2 9B 全模型训练，也未在 RTX 4090 上实测。测试产物保留在忽略的 output 和 datasets 中，模型不进入 Git。
+
 ## build(env): pin the exported Python training environment
 
 - 动机：容器及本地开发应复现现有 ai-toolkit_312 Conda 运行环境，避免依赖浮动导致训练结果难以复现。
