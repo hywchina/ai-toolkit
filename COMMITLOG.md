@@ -2,6 +2,13 @@
 
 每条记录以英文 commit 标题关联 Git 提交，正文描述中文变更动机、范围及验证。
 
+## feat(docker): package the LoRA API with mounted models and persistent state
+
+- 动机：将当前本地 AI Toolkit 改造打包为单个可运行服务镜像，避免上游 Dockerfile 从 GitHub 覆盖本地源码或将业务模型打入镜像。
+- 范围：新增 Dockerfile.service、专属构建排除文件、冻结依赖校验/安装器、运行时 Prisma 初始化入口及 compose.service.yaml；固定 Python 3.12 依赖、Node 24.16.0，使用 CUDA 12.8 PyTorch wheel，支持 Ubuntu NVIDIA 宿主机。API/Worker/Python 位于同一镜像，模型只读挂载，数据库/数据集/输出/HF缓存持久化；增加健康检查并要求令牌。UI 使用系统字体，消除 Google 字体构建网络依赖。新增部署文档和旧 API 文档索引。
+- 验证：目标镜像 ai-toolkit-service:local 初次构建成功；冻结依赖全量比对、pip check、Worker 编译、Next.js 生产构建通过。CDI 可见 RTX 3090，容器外 36 次 HTTP 检查、两步真实 LoRA 及容器重启后的状态/权重 SHA256 一致检查通过。取消行为额外修复后的最终回归结果单独记录在 SERVICE_TEST_REPORT.md。
+- 注意：实测复用了本机 rail-ai-toolkit:local-test 基础并校准依赖；公开 python:3.12-slim 从零构建路径已提供但未额外构建第二个目标镜像。容器用户空间为 Debian，可在 Ubuntu 宿主机运行；没有 4090 实测。公开资源鉴权等上游限制和已有 npm 告警见部署/验收文档，服务默认只监听宿主机回环端口。
+
 ## fix(api): preserve cancellation state until the training process exits
 
 - 动机：容器真实运行中取消测试证明 SIGINT 被训练器写成 error；原停止接口过早释放队列，还可能向已完成任务的旧 PID 发送信号。

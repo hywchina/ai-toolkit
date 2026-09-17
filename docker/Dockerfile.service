@@ -1,0 +1,36 @@
+# Linux amd64 on an Ubuntu NVIDIA host. PyTorch wheels supply CUDA 12.8 userspace.
+# RTX 3090 (sm_86) and RTX 4090 (sm_89); the host supplies the NVIDIA driver.
+ARG NODE_IMAGE=node:24.16.0-bookworm-slim
+ARG PYTHON_IMAGE=python:3.12-slim
+FROM ${NODE_IMAGE} AS node
+FROM ${PYTHON_IMAGE}
+USER root
+ENV DEBIAN_FRONTEND=noninteractive NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production PYTHONUNBUFFERED=1 \
+    HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+    NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    AITK_PYTHON=/usr/local/bin/python
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git build-essential ffmpeg libgl1 libglib2.0-0 libgomp1 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+WORKDIR /app/ai-toolkit
+COPY requirements.txt ./
+COPY docker/check_frozen.py docker/check_frozen.py
+# Reuse a validated pre-populated base on development hosts; clean builds install all pins.
+RUN python docker/check_frozen.py --install
+RUN pip check && python docker/check_frozen.py
+COPY ui/package.json ui/package-lock.json ui/
+RUN cd ui && npm ci --include=dev
+COPY . .
+RUN cd ui && npx prisma generate && npm run build
+# Database target is created at runtime, never baked into the image.
+RUN mkdir -p /state /app/ai-toolkit/output /app/ai-toolkit/datasets /app/ai-toolkit/models \
+    && ln -sfn /state/aitk_db.db /app/ai-toolkit/aitk_db.db
+EXPOSE 8675
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD node -e "fetch('http://127.0.0.1:8675/api/jobs?only_active=true',{headers:{Authorization:'Bearer '+process.env.AI_TOOLKIT_AUTH}}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+ENTRYPOINT ["bash", "/app/ai-toolkit/docker/service-entrypoint.sh"]

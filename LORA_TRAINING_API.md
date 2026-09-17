@@ -4,6 +4,8 @@
 > 适用版本：AI Toolkit UI `v0.1.0`  
 > 更新日期：2026-08-25
 
+> 2026-09-17 部署补充：单镜像构建、权重挂载与环境选择见 [SERVICE_DEPLOYMENT.md](SERVICE_DEPLOYMENT.md)，串行 API / 微型 LoRA 实测见 [SERVICE_TEST_REPORT.md](SERVICE_TEST_REPORT.md)。本文历史宿主机路径不应直接用于容器；容器模型和数据路径以部署说明为准。
+
 ## 1. 文档目的
 
 本文说明如何将 AI Toolkit 作为 LoRA 训练能力接入另一个业务项目，包括：
@@ -834,4 +836,3 @@ POST   /v1/lora/datasets
 | 数据集接口 | `ui/src/app/api/datasets/` |
 | 产物下载 | `ui/src/app/api/files/[...filePath]/route.ts` |
 | 训练配置示例 | `config/examples/`、`config/flux2_klein_9b_interior_lora.yaml` |
-

@@ -1,0 +1,34 @@
+services:
+  ai-toolkit:
+    image: ai-toolkit-service:local
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${AITK_PORT:-8675}:8675"
+    environment:
+      AI_TOOLKIT_AUTH: ${AI_TOOLKIT_AUTH:?Set AI_TOOLKIT_AUTH}
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      HF_HOME: /hf-cache
+    shm_size: 2gb
+    # CDI supported by the current host. On legacy NVIDIA runtime hosts use gpus: all instead.
+    devices:
+      - "nvidia.com/gpu=0"
+    volumes:
+      - type: bind
+        source: ${AITK_MODELS_DIR:?Set an absolute model directory}
+        target: /app/ai-toolkit/models
+        read_only: true
+      - aitk-state:/state
+      - aitk-datasets:/app/ai-toolkit/datasets
+      - aitk-output:/app/ai-toolkit/output
+      - aitk-hf-cache:/hf-cache
+    stop_grace_period: 60s
+volumes:
+  aitk-state:
+  aitk-datasets:
+  aitk-output:
+  aitk-hf-cache:
