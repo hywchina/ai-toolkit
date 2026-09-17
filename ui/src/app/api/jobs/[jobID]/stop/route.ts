@@ -18,6 +18,16 @@ export async function GET(request: NextRequest, { params }: { params: { jobID: s
     return NextResponse.json({ error: 'Job not found' }, { status: 404 });
   }
 
+  if (job.status === 'queued' || job.status === 'stopped') {
+    await prisma.job.updateMany({
+      where: { id: jobID, status: { in: ['queued', 'stopped'] } },
+      data: { stop: true, status: 'stopped', return_to_queue: false, info: 'Job stopped', pid: null },
+    });
+    const current = await prisma.job.findUnique({ where: { id: jobID } });
+    if (!current || current.status === 'stopped') return NextResponse.json(current);
+    job.pid = current.pid;
+  }
+
   await prisma.job.update({
     where: { id: jobID },
     data: {

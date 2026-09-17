@@ -1,173 +1,69 @@
 import prisma from '../prisma';
-import { Job } from '@prisma/client';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { TOOLKIT_ROOT, getTrainingFolder, getHFToken } from '../paths';
 import { resolvePythonPath } from '../pythonPath';
-const isWindows = process.platform === 'win32';
-
-const startAndWatchJob = (job: Job) => {
-  // starts and watches the job asynchronously
-  return new Promise<void>(async (resolve, reject) => {
-    const jobID = job.id;
-
-    // setup the training
-    const trainingRoot = await getTrainingFolder();
-
-    const trainingFolder = path.join(trainingRoot, job.name);
-    if (!fs.existsSync(trainingFolder)) {
-      fs.mkdirSync(trainingFolder, { recursive: true });
-    }
-
-    // make the config file
-    const configPath = path.join(trainingFolder, '.job_config.json');
-
-    //log to path
-    const logPath = path.join(trainingFolder, 'log.txt');
-
-    try {
-      // if the log path exists, move it to a folder called logs and rename it {num}_log.txt, looking for the highest num
-      // if the log path does not exist, create it
-      if (fs.existsSync(logPath)) {
-        const logsFolder = path.join(trainingFolder, 'logs');
-        if (!fs.existsSync(logsFolder)) {
-          fs.mkdirSync(logsFolder, { recursive: true });
-        }
-
-        let num = 0;
-        while (fs.existsSync(path.join(logsFolder, `${num}_log.txt`))) {
-          num++;
-        }
-
-        fs.renameSync(logPath, path.join(logsFolder, `${num}_log.txt`));
-      }
-    } catch (e) {
-      console.error('Error moving log file:', e);
-    }
-
-    // update the config dataset path
-    const jobConfig = JSON.parse(job.job_config);
-    jobConfig.config.process[0].sqlite_db_path = path.join(TOOLKIT_ROOT, 'aitk_db.db');
-
-    // write the config file
-    fs.writeFileSync(configPath, JSON.stringify(jobConfig, null, 2));
-
-    const pythonPath = resolvePythonPath();
-
-    const runFilePath = path.join(TOOLKIT_ROOT, 'run.py');
-    if (!fs.existsSync(runFilePath)) {
-      console.error(`run.py not found at path: ${runFilePath}`);
-      await prisma.job.update({
-        where: { id: jobID },
-        data: {
-          status: 'error',
-          info: `Error launching job: run.py not found`,
-        },
-      });
-      return;
-    }
-
-    const additionalEnv: any = {
-      AITK_JOB_ID: jobID,
-      CUDA_DEVICE_ORDER: 'PCI_BUS_ID',
-      CUDA_VISIBLE_DEVICES: `${job.gpu_ids}`,
-      IS_AI_TOOLKIT_UI: '1',
-    };
-
-    // HF_TOKEN
-    const hfToken = await getHFToken();
-    if (hfToken && hfToken.trim() !== '') {
-      additionalEnv.HF_TOKEN = hfToken;
-    }
-
-    // Add the --log argument to the command
-    const args = [runFilePath, configPath, '--log', logPath];
-
-    try {
-      let subprocess;
-
-      if (isWindows) {
-        // Spawn Python directly on Windows so the process can survive parent exit
-        subprocess = spawn(pythonPath, args, {
-          env: {
-            ...process.env,
-            ...additionalEnv,
-          },
-          cwd: TOOLKIT_ROOT,
-          detached: true,
-          windowsHide: true,
-          stdio: 'ignore', // don't tie stdio to parent
-        });
-      } else {
-        // For non-Windows platforms, fully detach and ignore stdio so it survives daemon-like
-        subprocess = spawn(pythonPath, args, {
-          detached: true,
-          stdio: 'ignore',
-          env: {
-            ...process.env,
-            ...additionalEnv,
-          },
-          cwd: TOOLKIT_ROOT,
-        });
-      }
-
-      // Save the PID to the database and a file for future management (stop/inspect)
-      const pid = subprocess.pid ?? null;
-      if (pid != null) {
-        await prisma.job.update({
-          where: { id: jobID },
-          data: { pid },
-        });
-      }
-      try {
-        fs.writeFileSync(path.join(trainingFolder, 'pid.txt'), String(pid ?? ''), { flag: 'w' });
-      } catch (e) {
-        console.error('Error writing pid file:', e);
-      }
-
-      // Important: let the child run independently of this Node process.
-      if (subprocess.unref) {
-        subprocess.unref();
-      }
-
-      // (No stdout/stderr listeners — logging should go to --log handled by your Python)
-      // (No monitoring loop — the whole point is to let it live past this worker)
-    } catch (error: any) {
-      // Handle any exceptions during process launch
-      console.error('Error launching process:', error);
-
-      await prisma.job.update({
-        where: { id: jobID },
-        data: {
-          status: 'error',
-          info: `Error launching job: ${error?.message || 'Unknown error'}`,
-        },
-      });
-      return;
-    }
-    // Resolve the promise immediately after starting the process
-    resolve();
-  });
-};
 
 export default async function startJob(jobID: string) {
-  const job: Job | null = await prisma.job.findUnique({
-    where: { id: jobID },
+  const job = await prisma.job.findUnique({ where: { id: jobID } });
+  if (!job) return;
+  const claim = await prisma.job.updateMany({
+    where: { id: jobID, status: 'queued', stop: false },
+    data: { status: 'running', info: 'Starting job...', pid: null },
   });
-  if (!job) {
-    console.error(`Job with ID ${jobID} not found`);
-    return;
+  if (!claim.count) return;
+  const fail = async (info: string) => {
+    await prisma.job.updateMany({
+      where: { id: jobID, status: { in: ['running', 'stopping'] } },
+      data: { status: 'error', info, pid: null },
+    });
+  };
+  let logFd: number | undefined;
+  try {
+    const trainingRoot = await getTrainingFolder();
+    const folder = path.join(trainingRoot, job.name);
+    fs.mkdirSync(folder, { recursive: true });
+    const configPath = path.join(folder, '.job_config.json');
+    const logPath = path.join(folder, 'log.txt');
+    if (fs.existsSync(logPath)) {
+      const logs = path.join(folder, 'logs');
+      fs.mkdirSync(logs, { recursive: true });
+      let n = 0;
+      while (fs.existsSync(path.join(logs, `${n}_log.txt`))) n++;
+      fs.renameSync(logPath, path.join(logs, `${n}_log.txt`));
+    }
+    const config = JSON.parse(job.job_config);
+    config.config.process[0].sqlite_db_path = path.join(TOOLKIT_ROOT, 'aitk_db.db');
+    config.config.process[0].training_folder = trainingRoot;
+    config.config.name = job.name;
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    const python = resolvePythonPath();
+    const hfToken = await getHFToken();
+    // Capture failures before Python's own logging has initialized.
+    logFd = fs.openSync(logPath, 'a');
+    const child = spawn(python, ['-u', path.join(TOOLKIT_ROOT, 'run.py'), configPath], {
+      cwd: TOOLKIT_ROOT, detached: true, windowsHide: true,
+      stdio: ['ignore', logFd, logFd],
+      env: {
+        ...process.env, AITK_JOB_ID: jobID, CUDA_DEVICE_ORDER: 'PCI_BUS_ID',
+        CUDA_VISIBLE_DEVICES: job.gpu_ids, IS_AI_TOOLKIT_UI: '1',
+        ...(hfToken ? { HF_TOKEN: hfToken } : {}),
+      },
+    });
+    // Install listeners before awaiting DB updates; preserve trainer terminal states.
+    child.once('error', error => void fail(`Python launch failed: ${error.message}`).catch(console.error));
+    child.once('exit', (code, signal) => {
+      void fail(`Python exited before completion (code=${code}, signal=${signal})`).catch(console.error);
+    });
+    if (child.pid) {
+      await prisma.job.updateMany({ where: { id: jobID, status: 'running' }, data: { pid: child.pid } });
+      fs.writeFileSync(path.join(folder, 'pid.txt'), String(child.pid));
+    }
+    child.unref();
+  } catch (error) {
+    await fail(`Error launching job: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    if (logFd !== undefined) fs.closeSync(logFd);
   }
-  // update job status to 'running', this will run sync so we don't start multiple jobs.
-  await prisma.job.update({
-    where: { id: jobID },
-    data: {
-      status: 'running',
-      stop: false,
-      info: 'Starting job...',
-    },
-  });
-  // start and watch the job asynchronously so the cron can continue
-  startAndWatchJob(job);
 }

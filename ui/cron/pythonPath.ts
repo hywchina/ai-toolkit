@@ -9,6 +9,13 @@ const isWindows = process.platform === 'win32';
 export const resolvePythonPath = (): string => {
   const candidates: string[] = [];
 
+  if (process.env.AITK_PYTHON) {
+    if (!path.isAbsolute(process.env.AITK_PYTHON) || !fs.existsSync(process.env.AITK_PYTHON)) {
+      throw new Error('AITK_PYTHON must reference an existing absolute Python executable');
+    }
+    return process.env.AITK_PYTHON;
+  }
+
   if (isWindows) {
     candidates.push(path.join(TOOLKIT_ROOT, '.venv', 'Scripts', 'python.exe'));
     candidates.push(path.join(TOOLKIT_ROOT, 'venv', 'Scripts', 'python.exe'));
