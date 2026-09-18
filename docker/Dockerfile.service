@@ -21,7 +21,10 @@ WORKDIR /app/ai-toolkit
 COPY requirements.txt ./
 COPY docker/check_frozen.py docker/check_frozen.py
 # Reuse a validated pre-populated base on development hosts; clean builds install all pins.
-RUN python docker/check_frozen.py --install
+# Scope the HTTP/1.1 fallback to Git downloads in this build step. Some build
+# networks terminate GitHub HTTP/2 streams before the pinned commit is fetched.
+RUN GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.version GIT_CONFIG_VALUE_0=HTTP/1.1 \
+    python docker/check_frozen.py --install
 RUN pip check && python docker/check_frozen.py
 COPY ui/package.json ui/package-lock.json ui/
 RUN cd ui && npm ci --include=dev

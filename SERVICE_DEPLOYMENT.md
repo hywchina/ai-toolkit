@@ -23,6 +23,19 @@ docker build -f docker/Dockerfile.service -t ai-toolkit-service:local .
 
 首次构建需要拉取基础镜像、Python/Git/npm 依赖。冻结文件包含传递依赖；安装后执行版本核对和 `pip check`。不要删除 diffusers 的 Git commit 固定值。
 
+若 Docker Hub 直连不可用，可通过可访问的镜像站获取公开基础镜像（仍然从不含训练依赖的 Python 基础开始）：
+
+```bash
+docker build --network host \
+  --build-arg NODE_IMAGE=m.daocloud.io/docker.io/library/node:24.16.0-bookworm-slim \
+  --build-arg PYTHON_IMAGE=m.daocloud.io/docker.io/library/python:3.12-slim \
+  -f docker/Dockerfile.service -t ai-toolkit-service:local .
+```
+
+镜像站是第三方来源，请按所在环境的供应链策略选择；不需要使用本机私有基础镜像。构建仍需能访问 GitHub、PyPI 和 npm。
+
+如果宿主机依赖已配置的代理访问这些源，在上述命令增加 `--build-arg HTTP_PROXY --build-arg HTTPS_PROXY --build-arg ALL_PROXY`，让 Docker 从当前环境读取代理。不要把代理凭据写入 Dockerfile 或提交到 Git。宿主机回环代理需配合 `--network host`；这些参数只用于构建，不设置运行中服务的代理。
+
 本机已有训练依赖基础镜像，可显式复用以减少重复下载：
 
 ```bash
@@ -32,7 +45,7 @@ docker build --network host \
   -f docker/Dockerfile.service -t ai-toolkit-service:local .
 ```
 
-`rail-ai-toolkit:local-test` 是本机已有镜像，不是可供其他机器直接拉取的公开基础。其他机器使用默认构建即可。本次验证使用此加速路径；构建会检查全部冻结依赖，并安装不匹配项，不能直接假定旧基础的依赖与导出环境相同。
+`rail-ai-toolkit:local-test` 是本机已有镜像，不是可供其他机器直接拉取的公开基础。2026-09-17 首次验证使用此加速路径；2026-09-18 已补充通过镜像站与构建代理从公开 Python 基础镜像构建并部署的验证。构建会检查全部冻结依赖，并安装不匹配项，不能直接假定旧基础的依赖与导出环境相同。
 
 ## 创建容器并启动
 
@@ -57,6 +70,8 @@ docker compose -p aitk-service -f compose.service.yaml ps
 
 上传/训练配置必须使用容器可见的路径，例如 `models/unet/flux-2-klein-9b.safetensors`。宿主机的 `/home/...` 路径不能直接用作容器模型路径。离线模式默认开启，完整的文本编码器、tokenizer、VAE、scheduler 等依赖也必须准备好，只有 UNet 权重不足以运行完整 Flux2 训练。按具体模型配置本地路径或挂载已经准备好的 HF 缓存；API 微型模型测试不代表这些生产模型资源已验证。
 
+注意跨目录软链接：Docker 只挂载指定目录，不会自动带入软链接指向的目录。本机 `models/vae/flux2-vae.safetensors` 指向 `../../comfyui_models/vae/flux2-vae.safetensors`，目前容器内不可读。正式 Flux 训练前，需将宿主机该真实文件单独只读挂载到例如 `/model-assets/flux2-vae.safetensors`，并把任务 `vae_path` 设置为这个容器路径；或按目录结构补充目标目录挂载。不要仅凭宿主机 `ls` 能看到文件就认为容器可读，需在容器中执行 `test -r` 验证。其他模型软链接同样需要检查。
+
 服务启动时执行 Prisma `db push --skip-generate` 初始化/同步数据库，然后启动 UI 和 Worker。不使用 `--accept-data-loss`。镜像增加了 HTTP healthcheck，检查 API 与数据库读取是否成功。
 
 停止容器前应停止接收新任务，等待已有训练结束或通过 API 停止后确认进程退出。强制终止容器可能中断 checkpoint 写入；重启本身不等于自动恢复训练。
@@ -67,7 +82,7 @@ docker compose -p aitk-service -f compose.service.yaml ps
 
 ```bash
 AI_TOOLKIT_AUTH="$AI_TOOLKIT_AUTH" \
-  /home/huyanwei/miniconda3/envs/ai-toolkit_312/bin/python \
+  .venv/bin/python \
   testing/api_smoke.py --base-url http://127.0.0.1:8675 --exercise-worker
 ```
 
@@ -105,7 +120,7 @@ python testing/api_train_smoke.py \
 ```bash
 cd ui
 export AI_TOOLKIT_AUTH='替换为随机令牌'
-export AITK_PYTHON='/home/huyanwei/miniconda3/envs/ai-toolkit_312/bin/python'
+export AITK_PYTHON="$(cd .. && pwd)/.venv/bin/python"
 npm run dev
 ```
 

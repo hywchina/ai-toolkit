@@ -2,6 +2,13 @@
 
 每条记录以英文 commit 标题关联 Git 提交，正文描述中文变更动机、范围及验证。
 
+## build(docker): validate clean public-base deployment
+
+- 动机：补齐不依赖本机旧训练基础镜像的可移植构建验收，解决构建时 GitHub HTTP/2 下载中断及代理未传入问题。
+- 范围：只在 Python 安装构建步骤使用 Git HTTP/1.1；部署说明补充公开基础镜像站和环境代理传入方式，本地启动示例改用已验收 .venv，说明跨目录模型软链接的挂载限制；更新最终验收证据。
+- 验证：通过镜像站公开 Python 基础与宿主机现有构建代理生成镜像 34842906b5ef，同一标签、同一服务容器替换成功。容器内依赖/GPU 检查及容器外 47 项 API 检查通过；两步真实 LoRA、运行中取消及重启后的任务/权重 SHA256 一致性通过。详见 SERVICE_TEST_REPORT.md 中 2026-09-18 记录。
+- 注意：Docker Hub 直连在本机仍不可用，镜像站与代理为本次网络条件；代理值未写入代码或运行环境。未改变固定依赖版本，未提交用户 .gitignore 改动。生产模型 VAE 软链接仍需按业务模型配置单独挂载；不宣称 4090 或全量生产验收完成。
+
 ## test(api): extend serial coverage and validate the uv environment
 
 - 动机：补齐项目内 uv 虚拟环境的运行验收，避免仅用 Conda 测试替代 .venv；扩大数据集标注等集成接口覆盖。

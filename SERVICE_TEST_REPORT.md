@@ -9,7 +9,19 @@
 - 运行中取消：15022934-110c-4afc-ab7a-3d3e7fd85df0，最终 stopped / pid=null，最终报告 step=6。
 - 本次并未修改生产模型配置或停止其他业务服务；GPU 测试未并发运行。
 
-以下保留 2026-09-17 的首次验收记录；其中 .venv 未安装的描述是历史状态。
+## 2026-09-18：公开基础镜像构建与容器复验
+
+- Docker Hub 直连失败；改用镜像站获取公开 `python:3.12-slim` 与 Node 基础镜像。GitHub 下载先遇到 HTTP/2 错误，HTTP/1.1 重试仍无法直连，最终通过宿主机已有代理完成构建。没有复用 `rail-ai-toolkit:local-test` 的训练依赖。
+- Python 基础镜像 manifest：`sha256:2c941e860699f878900b0edc2403613c234d4b32eda3cc9fa7036991a2a63c4a`；最终服务镜像底部四层与其一致。
+- 更新同一标签 `ai-toolkit-service:local`，镜像 ID：`sha256:34842906b5ef16fdd98c0ce62ce231e96dab1708e35273c5d1da6c7a8f9edce2`。未创建第二个服务实例。
+- 重新创建原容器后，冻结依赖检查、pip check、CUDA 12.8 / PyTorch 2.9.1+cu128 / RTX 3090 可用检查通过；容器 healthy。
+- 容器外扩展串行 API：47 次检查及 2 次清理通过。
+- 正常训练任务 `77b4e41f-6a41-46c8-b830-f9b929953ff4`：completed / 2 steps / 1 个指标点 / 1 个数值有效且发生参数更新的 LoRA。
+- 取消任务 `0fc52925-902c-4a5c-be98-bb83c74951b2`：观察到 step=3 后请求取消，最终 stopped / pid=null，报告 step=2。
+- 重启后上述任务状态、权重校验和一致，GPU/CPU API 可用。权重 SHA256：`476ad735c749da904f0c4bc8fbd41422e458b5f94aa8ba74d67cbd1719ced06a`。
+- 生产模型限制：本机 VAE 是跨挂载目录的软链接，当前容器内不可读。正式 Flux 训练前需补充真实文件挂载和容器路径配置。4090、完整生产模型、全部接口成功路径仍未验收；本次不是全量生产验收。
+
+以下保留 2026-09-17 的首次验收记录；其中旧镜像 ID 和 .venv 未安装的描述是历史状态。
 
 ## 范围与环境
 
