@@ -4,6 +4,7 @@ Run with AI_TOOLKIT_AUTH set. --exercise-worker checks failure propagation using
 an invalid job type (no model loading). This is NOT a successful LoRA training test.
 """
 import argparse
+import io
 import json
 import os
 import time
@@ -44,10 +45,31 @@ def main():
         call('GET', '/api/jobs?only_active=true')
         assert 'queues' in call('GET', '/api/queue').json()
         assert 'gpus' in call('GET', '/api/gpu').json()
+        call('GET', '/api/cpu')
         settings = call('GET', '/api/settings').json()
         call('GET', '/api/datasets/list')
         assert call('POST', '/api/datasets/create', json={'name': name}).json()['name'] == name
         caption = b'API smoke caption\n'
+        call('POST', '/api/datasets/upload', data={'datasetName': name},
+             files={'files': ('sample.txt', caption, 'text/plain')})
+        from PIL import Image
+        png = io.BytesIO()
+        Image.new('RGB', (16, 16), 'blue').save(png, format='PNG')
+        call('POST', '/api/datasets/upload', data={'datasetName': name},
+             files={'files': ('sample.png', png.getvalue(), 'image/png')})
+        listing = call('POST', '/api/datasets/listImages', json={'datasetName': name}).json()
+        assert 'sample.png' in listing['images'], listing
+        img_path = listing['root'] + 'sample.png'
+        assert call('POST', '/api/caption/get', json={'imgPath': img_path}).text == caption.decode()
+        updated_caption = 'Updated integration test caption'
+        call('POST', '/api/img/caption', json={'imgPath': img_path, 'caption': updated_caption})
+        assert call('POST', '/api/caption/getBatch', json={'imgPaths': [img_path]}).json()['captions'][img_path] == updated_caption
+        call('POST', '/api/caption/getBatch', json={'imgPaths': 'invalid'}, expected=400)
+        call('POST', '/api/zip', json={}, expected=400)
+        # Only remove the uniquely created image and its caption, then restore
+        # the text fixture used by the existing download/Range checks.
+        call('POST', '/api/img/delete', json={'imgPath': img_path})
+        assert not call('POST', '/api/datasets/listImages', json={'datasetName': name}).json()['images']
         call('POST', '/api/datasets/upload', data={'datasetName': name},
              files={'files': ('sample.txt', caption, 'text/plain')})
         route = '/api/files/' + quote(settings['DATASETS_FOLDER'] + '/' + name + '/sample.txt', safe='')
@@ -56,6 +78,7 @@ def main():
         body = {'name': name, 'gpu_ids': queue, 'job_type': 'train', 'job_ref': name,
                 'job_config': {'job': 'invalid_api_smoke', 'config': {'name': name, 'process': [{}]}}}
         job_id = call('POST', '/api/jobs', json=body).json()['id']
+        assert call('GET', f'/api/jobs/{job_id}/plugin?check=1').json()['exists'] is False
         call('POST', '/api/jobs', json=body, expected=409)
         job = call('GET', '/api/jobs?id=' + job_id).json()
         assert job['status'] == 'stopped'

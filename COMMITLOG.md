@@ -2,6 +2,13 @@
 
 每条记录以英文 commit 标题关联 Git 提交，正文描述中文变更动机、范围及验证。
 
+## test(api): extend serial coverage and validate the uv environment
+
+- 动机：补齐项目内 uv 虚拟环境的运行验收，避免仅用 Conda 测试替代 .venv；扩大数据集标注等集成接口覆盖。
+- 范围：串行测试增加 CPU、图片上传和列表、标注读取/修改/批量读取、图片删除、缺失插件查询，以及批量参数和 ZIP 参数错误响应。所有写入/删除只针对 UUID 命名的测试数据。
+- 验证：2026-09-18 显式使用项目 .venv 启动本地 Worker，47 次 HTTP 检查及 2 次清理通过；真实两步 LoRA 任务 5bb1b834-2c4d-495f-9507-cbd5fbee7318 完成，指标和非零权重验证通过；取消任务 15022934-110c-4afc-ab7a-3d3e7fd85df0 最终 stopped/pid=null。Python 语法和 git diff --check 通过。
+- 注意：ZIP 仅覆盖缺参数响应，不代表打包成功路径通过；微型随机模型不代表生产模型质量或 4090 实测。训练产物保留，测试结束关闭本次启动的本地服务。
+
 ## test(docker): record serial API and LoRA deployment acceptance
 
 - 动机：区分接口响应、真正训练、主动取消与容器持久化的验收证据，避免将微型模型测试误报为生产模型/4090 验证。
