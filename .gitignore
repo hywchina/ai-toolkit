@@ -163,6 +163,7 @@ cython_debug/
 
 /env.sh
 /models
+/Qwen/
 /datasets
 /custom/*
 !/custom/.gitkeep
