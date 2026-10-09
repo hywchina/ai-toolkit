@@ -16,45 +16,41 @@
 在项目根目录执行：
 
 ```bash
-docker build -f docker/Dockerfile.service -t ai-toolkit-service:local .
+docker build -f docker/Dockerfile.service -t rail-ai-toolkit:1.0.0 .
 ```
 
 与上游 Dockerfile 不同，本文件直接复制当前本地源码，不从 GitHub 克隆并覆盖本地改造。专属 `.dockerignore` 排除模型、数据集、输出、数据库、虚拟环境、前端构建缓存和 Git。`toolkit/keymaps` 中随源码发布的映射用 safetensors 小文件保留，它们不是部署模型权重。
 
 首次构建需要拉取基础镜像、Python/Git/npm 依赖。冻结文件包含传递依赖；安装后执行版本核对和 `pip check`。不要删除 diffusers 的 Git commit 固定值。
 
-若 Docker Hub 直连不可用，可通过可访问的镜像站获取公开基础镜像（仍然从不含训练依赖的 Python 基础开始）：
+默认使用上游基础镜像名（仍然从不含训练依赖的 Python 基础开始）：
 
 ```bash
 docker build --network host \
-  --build-arg NODE_IMAGE=m.daocloud.io/docker.io/library/node:24.16.0-bookworm-slim \
-  --build-arg PYTHON_IMAGE=m.daocloud.io/docker.io/library/python:3.12-slim \
-  -f docker/Dockerfile.service -t ai-toolkit-service:local .
+  --build-arg NODE_IMAGE=node:24.16.0-bookworm-slim \
+  --build-arg PYTHON_IMAGE=python:3.12-slim \
+  -f docker/Dockerfile.service -t rail-ai-toolkit:1.0.0 .
 ```
 
-镜像站是第三方来源，请按所在环境的供应链策略选择；不需要使用本机私有基础镜像。构建仍需能访问 GitHub、PyPI 和 npm。
+如需镜像代理，应在 Docker daemon 或构建环境配置代理，不把代理域名编码进最终镜像名称。构建仍需能访问 GitHub、PyPI 和 npm。
 
 如果宿主机依赖已配置的代理访问这些源，在上述命令增加 `--build-arg HTTP_PROXY --build-arg HTTPS_PROXY --build-arg ALL_PROXY`，让 Docker 从当前环境读取代理。不要把代理凭据写入 Dockerfile 或提交到 Git。宿主机回环代理需配合 `--network host`；这些参数只用于构建，不设置运行中服务的代理。
 
-本机已有训练依赖基础镜像，可显式复用以减少重复下载：
-
-```bash
-docker build --network host \
-  --build-arg NODE_IMAGE=m.daocloud.io/docker.io/library/node:24.16.0-bookworm-slim \
-  --build-arg PYTHON_IMAGE=rail-ai-toolkit:local-test \
-  -f docker/Dockerfile.service -t ai-toolkit-service:local .
-```
-
-`rail-ai-toolkit:local-test` 是本机已有镜像，不是可供其他机器直接拉取的公开基础。2026-09-17 首次验证使用此加速路径；2026-09-18 已补充通过镜像站与构建代理从公开 Python 基础镜像构建并部署的验证。构建会检查全部冻结依赖，并安装不匹配项，不能直接假定旧基础的依赖与导出环境相同。
+2026-09-17 曾复用本机旧训练镜像加速验证；当前权威构建不再依赖该旧标签。构建会检查全部冻结依赖，并安装不匹配项，不能直接假定任意本地基础镜像与导出环境相同。
 
 ## 创建容器并启动
 
 ```bash
 export AI_TOOLKIT_AUTH='替换为足够长的随机令牌'
 export AITK_MODELS_DIR='/绝对路径/模型目录'
-docker compose -p aitk-service -f compose.service.yaml up -d --no-build
-docker compose -p aitk-service -f compose.service.yaml ps
+docker compose -f compose.service.yaml up -d --no-build
+docker compose -f compose.service.yaml ps
 ```
+
+Compose 项目默认为 `rail-ai-toolkit-validation`，容器名因此以
+`rail-ai-toolkit-validation-` 开头。可通过 `AI_TOOLKIT_PROJECT_NAME` 和
+`AI_TOOLKIT_IMAGE` 显式覆盖，但本项目的自建镜像和 Compose 项目名应保留
+`rail-` 前缀。
 
 默认只发布 `127.0.0.1:8675`。远程业务系统应经内网反向代理访问，并在代理层统一鉴权；当前 `/api/files/` 和 `/api/img/` 仍沿用上游公开资源路由，不应直接向不受信任网络开放服务。
 

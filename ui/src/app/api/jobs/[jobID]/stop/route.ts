@@ -6,7 +6,7 @@ import { promisify } from 'util';
 const execFileAsync = promisify(execFile);
 const prisma = new PrismaClient();
 
-export async function GET(request: NextRequest, { params }: { params: { jobID: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ jobID: string }> }) {
   const { jobID } = await params;
   const cancelled = await prisma.job.updateMany({
     where: { id: jobID, status: 'queued' },

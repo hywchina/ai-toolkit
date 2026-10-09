@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { NextRequest, NextResponse } from 'next/server';
+import { decodeRoutePath } from '@/server/route-path';
 import fs from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
@@ -29,11 +30,11 @@ const contentTypeMap: { [key: string]: string } = {
   '.ogg': 'audio/ogg',
 };
 
-export async function GET(request: NextRequest, { params }: { params: { imagePath: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ imagePath: string[] }> }) {
   const { imagePath } = await params;
   try {
     // Decode the path
-    const filepath = decodeURIComponent(imagePath);
+    const filepath = decodeRoutePath(imagePath);
 
     // Get allowed directories
     const datasetRoot = await getDatasetsRoot();

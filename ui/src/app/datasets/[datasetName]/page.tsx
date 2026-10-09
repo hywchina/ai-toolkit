@@ -17,11 +17,11 @@ import CaptionMonitor from '@/components/CaptionMonitor';
 import { CreatableSelectInput } from '@/components/formInputs';
 import { useLanguage } from '@/components/LanguageProvider';
 
-export default function DatasetPage({ params }: { params: { datasetName: string } }) {
+export default function DatasetPage({ params }: { params: Promise<{ datasetName: string }> }) {
   const { translate } = useLanguage();
   const [imgList, setImgList] = useState<{ img_path: string }[]>([]);
   const [isAutoCaptioning, setIsAutoCaptioning] = useState(false);
-  const usableParams = use(params as any) as { datasetName: string };
+  const usableParams = use(params);
   const datasetName = usableParams.datasetName;
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const { settings, isSettingsLoaded } = useSettings();

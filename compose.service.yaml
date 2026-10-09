@@ -1,6 +1,8 @@
+name: ${AI_TOOLKIT_PROJECT_NAME:-rail-ai-toolkit-validation}
+
 services:
   ai-toolkit:
-    image: ai-toolkit-service:local
+    image: ${AI_TOOLKIT_IMAGE:-rail-ai-toolkit:1.0.0}
     build:
       context: .
       dockerfile: docker/Dockerfile.service

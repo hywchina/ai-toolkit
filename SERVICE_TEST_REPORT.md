@@ -1,5 +1,19 @@
 # LoRA 服务验收记录（2026-09-17）
 
+## 2026-10-09：系统回归与 Next.js 类型门禁
+
+- 修复 15 个动态 API 路由和 2 个客户端页面的参数类型，使用 Next.js 的 Promise 参数；客户端直接 `use(params)`，不再强制转为 `any`。文件、图片与音频 catch-all 参数按数组拼接路径，保留原有编码绝对路径协议及目录权限检查。
+- 移除 `ignoreBuildErrors`，新增 `npm run typecheck`；Worker 编译、完整 UI 类型检查和开启类型验证的生产构建全部通过。校正工作区追踪根、弃用的 devIndicators 和 macOS 可选外部模块配置，原三类构建告警已消除。
+- 新增 5 项路径单测（编码绝对路径、多段、中文/逗号/空格、遍历保留供资源层校验、非法编码），`npm test` 通过。测试使用现有 TypeScript 编译器加载真实源码，兼容不能直接加载 TypeScript 的 Node 20；没有把包改成 ESM，避免破坏 CommonJS Worker。
+- `npm run lint` 发现上游缺少 ESLint 配置、会进入交互初始化；不记为通过，也未自动引入未经评估的规则或依赖。真实服务 HTTP、训练、取消及生产模型质量本轮没有复验；没有启动 GPU 队列、修改 SQLite 数据或覆盖历史训练产物。
+
+> 2026-09-23 根 Compose 复测使用的镜像标签为 `rail-ai-toolkit:service-local`，容器名为 `rail-ai-toolkit-1`。服务 healthy；在根 Compose 新命名卷和集中模型挂载下，鉴权、数据集、文件 Range、任务、队列与 Worker 异常回写等 48 项检查通过并清理测试数据。Flux2 9B UNet、共享 VAE 和 Qwen 目录在容器两套约定路径下均真实可读，历史跨目录软链接问题已由根 Compose 挂载解决。未在本轮重复生产 Flux2 或微型真实 LoRA；以下历史记录保留真实训练证据。
+
+> 命名说明：本报告保留验收时的 `ai-toolkit-service:local` 镜像和
+> `aitk-service-ai-toolkit-1` 容器名作为历史证据。当前规范名分别是
+> `rail-ai-toolkit:service-local` 和 `rail-ai-toolkit-validation-ai-toolkit-1`。当前正式标签为
+> `rail-ai-toolkit:1.0.0`，与验收镜像指向同一个镜像 ID。
+
 ## 2026-09-18：项目 .venv 补充验收
 
 项目 .venv（Python 3.12.13、PyTorch 2.9.1+cu128）已完成 174 个依赖安装与兼容检查，CUDA 可用。显式通过 AITK_PYTHON 指定该环境启动本地服务，所有测试依次执行。
