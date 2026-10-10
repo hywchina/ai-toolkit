@@ -2,6 +2,14 @@
 
 本服务为 AI Toolkit，不是 ComfyUI。镜像包含 Next.js API、单个队列 Worker、Python 3.12 与冻结依赖。模型权重不打包，使用只读挂载；数据集、LoRA 输出和数据库使用持久卷。
 
+## 整体 Ubuntu 部署 2026-10-10
+
+在完整 rail-system 布局中使用 [Ubuntu 手册](../../DEPLOY_UBUNTU.md) 的根 `deploy.sh`，编排为 `../deployment/compose.yaml`；当前镜像 `rail-ai-toolkit:2026.10.10`，并非复用旧业务镜像。`--lora-gpu` 选择一张宿主物理 GPU，容器内配置 `LORA_GPU_IDS=0`。全量模式要求与 ComfyUI、vLLM 分配不同物理 GPU；单卡使用 training 模式。Token、数据库和运行状态不进入 Git 或交付源码，服务只面向可信平台内网。
+
+系统挂载完整 `/models` 及必要 Qwen/VAE 别名，原跨目录软链接在系统编排内可读。当前训练使用 `/models/comfyui_models/vae/full_encoder_small_decoder.safetensors`；`flux2-vae.safetensors` 的 Diffusers 键名不能直接交给当前原生加载器。Flux2 Klein 9B 已实测 20 步 rank 4，输出 20,738,200 字节 safetensors；这不等于长训质量、多卡训练或目标 GPU 验收。权重提前准备并校验，禁止下载。
+
+以下是仍保留的子项目独立部署方法；其 `1.0.0` 标签、CDI 和端口不替代整体入口参数。
+
 ## 硬件与系统
 
 - 宿主机：Ubuntu/Linux amd64，NVIDIA GPU，Docker Engine 和 NVIDIA Container Toolkit。
@@ -66,7 +74,7 @@ Compose 项目默认为 `rail-ai-toolkit-validation`，容器名因此以
 
 上传/训练配置必须使用容器可见的路径，例如 `models/unet/flux-2-klein-9b.safetensors`。宿主机的 `/home/...` 路径不能直接用作容器模型路径。离线模式默认开启，完整的文本编码器、tokenizer、VAE、scheduler 等依赖也必须准备好，只有 UNet 权重不足以运行完整 Flux2 训练。按具体模型配置本地路径或挂载已经准备好的 HF 缓存；API 微型模型测试不代表这些生产模型资源已验证。
 
-注意跨目录软链接：Docker 只挂载指定目录，不会自动带入软链接指向的目录。本机 `models/vae/flux2-vae.safetensors` 指向 `../../comfyui_models/vae/flux2-vae.safetensors`，目前容器内不可读。正式 Flux 训练前，需将宿主机该真实文件单独只读挂载到例如 `/model-assets/flux2-vae.safetensors`，并把任务 `vae_path` 设置为这个容器路径；或按目录结构补充目标目录挂载。不要仅凭宿主机 `ls` 能看到文件就认为容器可读，需在容器中执行 `test -r` 验证。其他模型软链接同样需要检查。
+注意跨目录软链接：Docker 只挂载指定目录，不会自动带入软链接指向的目录。单独运行 `compose.service.yaml` 时，仅挂载 AI Toolkit 模型目录不足以解析 `models/vae/flux2-vae.safetensors` 的跨目录目标；整体系统已补充对应挂载。其他独立部署必须补全共享目录并在容器中执行 `test -r`。路径可读与权重格式兼容是两项检查；当前原生 Flux2 训练使用上文已验收 VAE，不直接使用 Diffusers 格式权重。
 
 服务启动时执行 Prisma `db push --skip-generate` 初始化/同步数据库，然后启动 UI 和 Worker。不使用 `--accept-data-loss`。镜像增加了 HTTP healthcheck，检查 API 与数据库读取是否成功。
 

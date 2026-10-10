@@ -1,5 +1,7 @@
 # Ostris AI Toolkit
 
+轨道客室系统部署请使用 [SERVICE_DEPLOYMENT.md](SERVICE_DEPLOYMENT.md) 和 [SERVICE_TEST_REPORT.md](SERVICE_TEST_REPORT.md)。当前整体交付镜像为 `rail-ai-toolkit:2026.10.10`，权重必须事先在中央 `models/` 中准备；本页上游模型下载/云端示例不属于本系统部署授权。
+
 AI Toolkit 是一个易于使用的一体化扩散模型训练套件。我会尽量支持所有最新模型，并让它们能在消费级硬件上运行，包括图像和视频模型。它可以通过 GUI 或 CLI 运行。它的设计目标是既简单易用，又尽可能包含你能想到的各种功能。免费且开源。
 
 

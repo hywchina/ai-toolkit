@@ -1,5 +1,7 @@
 # AI Toolkit LoRA 训练 API 接入说明
 
+2026-10-10 部署更新：API 契约不变；整体系统的镜像、独立 GPU、原生 VAE 和外部状态目录以 [SERVICE_DEPLOYMENT.md](SERVICE_DEPLOYMENT.md) 为准，真实 Flux2 20 步验收见 [SERVICE_TEST_REPORT.md](SERVICE_TEST_REPORT.md)。以下宿主路径为原接口说明，不直接用于整体容器。
+
 > 文档状态：当前实现说明 + 上层项目集成约定  
 > 适用版本：AI Toolkit UI `v0.1.0`  
 > 更新日期：2026-08-25

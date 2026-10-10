@@ -1,5 +1,11 @@
 # 提交变更记录
 
+## docs(deploy): align Ubuntu delivery and local-model training guidance
+
+- 日期：2026-10-10。同步整体部署入口、`2026.10.10` 版本、独立物理 GPU / 容器 CUDA 0、完整模型挂载及已验收原生 VAE；保留独立 Compose 和历史测试记录，不改训练 API 或依赖版本。
+- 当前系统验收：Flux2 Klein 9B 20 步 rank 4 真实训练、平台资产回流通过；该短训不代表长训质量、多卡并发或目标服务器验收。无权重下载，详见 `SERVICE_TEST_REPORT.md` 和整体 `DEPLOY_VALIDATION_20261010.json`。
+- 本次文档同步复核：`ui/npm test` 5 项及 `npm run typecheck` 通过，未再次启动 GPU 训练，也未改变程序依赖或业务 API。
+
 每条记录以英文 commit 标题关联 Git 提交，正文描述中文变更动机、范围及验证。
 
 ## build(docker): validate clean public-base deployment

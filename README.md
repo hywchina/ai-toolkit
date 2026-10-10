@@ -1,5 +1,7 @@
 # Ostris AI Toolkit
 
+本 Fork 的轨道客室系统部署入口见 [SERVICE_DEPLOYMENT.md](SERVICE_DEPLOYMENT.md)，实际验收见 [SERVICE_TEST_REPORT.md](SERVICE_TEST_REPORT.md)。2026-10-10 整体 Ubuntu 交付使用 `rail-ai-toolkit:2026.10.10`、独立物理 GPU 和本地只读权重；下列上游云端/模型下载示例不属于本系统部署流程，不能据此下载模型。
+
 AI Toolkit is an easy to use all in one training suite for diffusion models. I try to support all the latest models on consumer grade hardware. Image and video models. It can be run as a GUI or CLI. It is designed to be easy to use but still have every feature imaginable. Free and open source.
 
 

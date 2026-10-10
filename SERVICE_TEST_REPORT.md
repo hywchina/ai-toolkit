@@ -1,5 +1,11 @@
 # LoRA 服务验收记录（2026-09-17）
 
+## 2026-10-10 整体 Ubuntu 交付验收
+
+整体入口从当前 Dockerfile 构建 `rail-ai-toolkit:2026.10.10`，使用集中模型只读挂载和持久卷，不导入旧业务镜像、不下载权重。RTX 3090 24 GiB 上串行完成真实 Flux2 Klein 9B、20 步、rank 4 训练，输出 20,738,200 字节 safetensors，平台任务与模型资产回流通过。VAE 使用原生键名的 `/models/comfyui_models/vae/full_encoder_small_decoder.safetensors`，完整模型挂载已解决跨目录可达性。
+
+物理 GPU 由 `--lora-gpu` 指定，容器内为 CUDA 0；三服务独立 GPU 配置和重复设备拒绝通过，但本机只有一张卡，未执行三 GPU 并发、多卡训练或生产长训质量验收。整体镜像 ID 与验证边界见 `../../DEPLOY_VALIDATION_20261010.json`。以下保留各历史轮次，不将本次结论反写为当时已验证。
+
 ## 2026-10-09：系统回归与 Next.js 类型门禁
 
 - 修复 15 个动态 API 路由和 2 个客户端页面的参数类型，使用 Next.js 的 Promise 参数；客户端直接 `use(params)`，不再强制转为 `any`。文件、图片与音频 catch-all 参数按数组拼接路径，保留原有编码绝对路径协议及目录权限检查。

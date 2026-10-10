@@ -1,5 +1,7 @@
 # LoRA 服务容器化实施计划
 
+本页是 2026-09-17/18 的历史实施计划与当时环境快照，已完成的工作不再作为待办。当前 Ubuntu 整体部署、模型挂载及 2026-10-10 真实 Flux2 短训结论见 [SERVICE_DEPLOYMENT.md](SERVICE_DEPLOYMENT.md) 和 [SERVICE_TEST_REPORT.md](SERVICE_TEST_REPORT.md)；不按本页旧目录或旧 VAE 限制部署新系统。
+
 目标：当前 AI Toolkit，单镜像包含 Next.js API、队列 Worker 和 Python 训练环境。模型通过只读挂载提供；数据库、数据集和输出持久化。所有 API 测试按顺序执行。
 
 ## 工作顺序
