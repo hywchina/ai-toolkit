@@ -1,3 +1,7 @@
+import os
+
+from toolkit.paths import MODELS_PATH
+
 from .flux2_model import Flux2Model
 from transformers import Qwen3ForCausalLM, Qwen2Tokenizer
 from optimum.quanto import freeze
@@ -37,11 +41,15 @@ class Flux2KleinModel(Flux2Model):
     def load_te(self):
         if self.flux2_klein_te_path is None:
             raise ValueError("flux2_klein_te_path must be set for Flux2KleinModel")
+        local_path = os.path.join(MODELS_PATH, self.flux2_klein_te_path)
+        te_path = self.model_config.te_name_or_path or (
+            local_path if os.path.isdir(local_path) else self.flux2_klein_te_path
+        )
         dtype = self.torch_dtype
         self.print_and_status_update("Loading Qwen3")
 
         text_encoder: Qwen3ForCausalLM = Qwen3ForCausalLM.from_pretrained(
-            self.flux2_klein_te_path,
+            te_path,
             torch_dtype=dtype,
         )
         if self.model_config.quantize_te:
@@ -63,7 +71,7 @@ class Flux2KleinModel(Flux2Model):
                 offload_percent=self.model_config.layer_offloading_text_encoder_percent,
             )
 
-        tokenizer = Qwen2Tokenizer.from_pretrained(self.flux2_klein_te_path)
+        tokenizer = Qwen2Tokenizer.from_pretrained(te_path)
         return text_encoder, tokenizer
 
 

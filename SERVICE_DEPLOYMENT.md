@@ -133,3 +133,7 @@ npm run dev
 生产环境可以只用 `npm run start`，但必须提前 `npm run update_db && npm run build`。容器已经在构建/启动阶段完成对应步骤。
 
 更多 API 请求字段见 `LORA_TRAINING_API.md`。验收实测结果见 `SERVICE_TEST_REPORT.md`，改造动机及验证记录见 `COMMITLOG.md`。
+
+## 2026-10-23 本地文本编码器读取约定
+
+Flux2 Klein 优先读取 MODELS_PATH/Qwen/Qwen3-8B，显式 te_name_or_path 优先；保持 models/ai_toolkit_models 到容器 models 的只读挂载及现有包内链接。该修复位于训练服务 loader，后续交付需更新 AI Toolkit 镜像；只更新平台 Web/API 不会改变训练服务加载路径。本轮仅本地源码及真实训练验证，未部署服务器。
